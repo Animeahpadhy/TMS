@@ -2,1282 +2,569 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>TMS — Transport Management</title>
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
-
-<!-- Firebase Compat SDK (fixes onclick scope issue) -->
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
-<script>
-// ---- shim so rest of code works unchanged ----
-// =====================================================
-// 🔥 FIREBASE CONFIG
-// =====================================================
-const firebaseConfig = {
-  apiKey: "AIzaSyAPu5_BwUEu_xXdpXkmOJbuErGCGYqBUeE",
-  authDomain: "wh-logistics-system.firebaseapp.com",
-  projectId: "wh-logistics-system",
-  storageBucket: "wh-logistics-system.firebasestorage.app",
-  messagingSenderId: "279467148642",
-  appId: "1:279467148642:web:c458996bca6c85ed33983b"
-};
-
-firebase.initializeApp(firebaseConfig);
-const db      = firebase.firestore();
-const storage = firebase.storage();
-const serverTimestamp = () => firebase.firestore.FieldValue.serverTimestamp();
-
-// =====================================================
-// GLOBAL STATE
-// =====================================================
-let currentUser = null; // { username, role, store, wh }
-
-// =====================================================
-// UTILS
-// =====================================================
-function $(id){ return document.getElementById(id); }
-function show(id){ const e=$(id); if(e) e.style.display = id==='page-login'?'flex':''; }
-function hide(id){ const e=$(id); if(e) e.style.display='none'; }
-function showOnly(id){
-  ['page-login','page-wh','page-store','page-transporter','page-admin'].forEach(p=>hide(p));
-  show(id);
-}
-
-function toast(msg, type='info'){
-  const t = document.createElement('div');
-  t.className = `toast toast-${type}`;
-  t.textContent = msg;
-  document.body.appendChild(t);
-  setTimeout(()=>t.classList.add('show'),10);
-  setTimeout(()=>{ t.classList.remove('show'); setTimeout(()=>t.remove(),400); },3000);
-}
-
-function setLoading(btn, loading){
-  if(loading){ btn.dataset.orig = btn.textContent; btn.textContent='…'; btn.disabled=true; }
-  else { btn.textContent = btn.dataset.orig||btn.textContent; btn.disabled=false; }
-}
-
-// =====================================================
-// LOGIN
-// =====================================================
-async function login(){
-  const btn = $('btn-login');
-  const user = $('inp-user').value.trim();
-  const pwd  = $('inp-pwd').value.trim();
-  if(!user||!pwd){ toast('Enter username and password','error'); return; }
-  setLoading(btn,true);
-  try {
-    const snap = await db.collection('users').doc(user).get();
-    if(!snap.exists){ toast('User not found','error'); setLoading(btn,false); return; }
-    const d = snap.data();
-    if(d.password !== pwd){ toast('Wrong password','error'); setLoading(btn,false); return; }
-    currentUser = { username:user, role:d.role, store:d.store||null, wh:d.wh||null };
-    renderRole();
-  } catch(e){
-    toast('Firebase error: '+e.message,'error');
-  }
-  setLoading(btn,false);
-}
-
-function logout(){
-  currentUser=null;
-  $('inp-user').value='';
-  $('inp-pwd').value='';
-  showOnly('page-login');
-}
-
-function renderRole(){
-  const r = currentUser.role;
-  if(r==='WH')          { showOnly('page-wh');          renderWH(); }
-  else if(r==='Store')  { showOnly('page-store');        renderStore(); }
-  else if(r==='Transporter'){ showOnly('page-transporter'); renderTransporter(); }
-  else if(r==='Admin')  { showOnly('page-admin');        renderAdmin(); }
-}
-
-// =====================================================
-// WH PANEL
-// =====================================================
-function renderWH(){
-  $('wh-username').textContent = currentUser.username;
-  whTab('upload');
-}
-
-function whTab(t){
-  ['upload','search','download'].forEach(x=>{
-    $('wh-tab-'+x).classList.toggle('active', x===t);
-    $('wh-panel-'+x).style.display = x===t?'':'none';
-  });
-}
-
-async function whUpload(){
-  const file = $('wh-file').files[0];
-  if(!file){ toast('Select a file','error'); return; }
-  const btn=$('btn-wh-upload');
-  setLoading(btn,true);
-  $('wh-upload-log').innerHTML='';
-
-  try {
-    let df = await parseFile(file);
-    log('wh-upload-log', `📂 Loaded ${df.length} rows`);
-
-    // Validate columns
-    const required = ['LR_No','Invoice_No','Order_No','Store','Transporter','Vehicle_No','LR_Date','Transfer_Location','Invoice_Qty','Invoice_Value','Box_Count'];
-    const missing = required.filter(c=>!df[0]||!(c in df[0]));
-    if(missing.length){ toast('Missing columns: '+missing.join(', '),'error'); setLoading(btn,false); return; }
-
-    // Remove blank rows
-    df = df.filter(r=>r.LR_No && r.Invoice_No && String(r.LR_No).trim()!=='' && String(r.Invoice_No).trim()!=='');
-    log('wh-upload-log', `✅ ${df.length} valid rows after cleaning`);
-
-    // Group by LR
-    const grouped = {};
-    df.forEach(r=>{
-      const lr = String(r.LR_No).trim();
-      if(!grouped[lr]) grouped[lr]=[];
-      grouped[lr].push(r);
-    });
-
-    const lrList = Object.keys(grouped);
-    let processed=0, skipped=0, overwritten=0;
-    const now = new Date();
-    const batch = db.batch();
-    let batchCount=0;
-
-    for(const lr of lrList){
-      const group = grouped[lr];
-      const lrRef = db.collection('lr_master').doc(lr);
-      const lrSnap = await lrRef.get();
-
-      let allowInsert=true;
-
-      if(lrSnap.exists){
-        const data = lrSnap.data();
-        const uploadTime = data.upload_time?.toDate ? data.upload_time.toDate() : new Date(data.upload_time);
-        const diffHrs = (now - uploadTime)/3600000;
-
-        if(diffHrs <= 4){
-          // overwrite allowed within 4h
-          overwritten++;
-        } else {
-          // locked for WH after 4h
-          skipped++;
-          allowInsert=false;
-          log('wh-upload-log',`⛔ LR ${lr} locked (>4h) — skipped`);
-        }
-      }
-
-      if(!allowInsert) continue;
-
-      const first = group[0];
-      batch.set(lrRef,{
-        status:'In Transit',
-        lr_date: String(first.LR_Date||''),
-        transporter: String(first.Transporter||''),
-        vehicle_no: String(first.Vehicle_No||''),
-        from_location: String(first.Transfer_Location||''),
-        store: String(first.Store||''),
-        upload_time: serverTimestamp(),
-        created_time: serverTimestamp(),
-        last_updated: serverTimestamp(),
-        created_by: currentUser.username,
-        wh: currentUser.wh||currentUser.username,
-        invoice_count: group.length
-      });
-      batchCount++;
-
-      for(const row of group){
-        
-        db.collection('invoices').add({
-          invoice_no: String(row.Invoice_No||''),
-          order_no: String(row.Order_No||''),
-          lr_no: lr,
-          store: String(row.Store||''),
-          invoice_qty: parseFloat(row.Invoice_Qty)||0,
-          invoice_value: parseFloat(row.Invoice_Value)||0,
-          box_count: parseInt(row.Box_Count)||0,
-          status:'In Transit',
-          created_time: serverTimestamp()
-        });
-        batchCount++;
-        processed++;
-
-        if(batchCount>=400){
-          await batch.commit();
-          batchCount=0;
-        }
-      }
-    }
-
-    if(batchCount>0) await batch.commit();
-
-    log('wh-upload-log',`✅ Done! Invoices: ${processed} | Overwritten LRs: ${overwritten} | Skipped: ${skipped}`);
-    toast('Upload complete!','success');
-  } catch(e){
-    log('wh-upload-log','❌ Error: '+e.message);
-    toast('Upload failed','error');
-  }
-  setLoading(btn,false);
-}
-
-async function whSearch(){
-  const lr = $('wh-search-lr').value.trim();
-  if(!lr){ toast('Enter LR No','error'); return; }
-  const btn=$('btn-wh-search');
-  setLoading(btn,true);
-  $('wh-search-result').innerHTML='';
-  try {
-    const snap = await db.collection('lr_master').doc(lr).get();
-    if(!snap.exists){ toast('LR not found','error'); setLoading(btn,false); return; }
-    const d = snap.data();
-
-    // fetch invoices
-    const q = db.collection('invoices').where('lr_no','==',lr);
-    const invSnap = await q.get();
-    const invs = invSnap.docs.map(x=>x.data());
-
-    renderLRCard('wh-search-result', lr, d, invs, true);
-  } catch(e){ toast('Error: '+e.message,'error'); }
-  setLoading(btn,false);
-}
-
-async function whDownload(){
-  const btn=$('btn-wh-download');
-  setLoading(btn,true);
-  try {
-    const snap = await db.collection('lr_master').get();
-    const rows = snap.docs.map(d=>({ lr_no:d.id, ...d.data() }));
-    downloadCSV(rows,'TMS_LR_Data.csv');
-    toast('Downloaded!','success');
-  } catch(e){ toast('Error: '+e.message,'error'); }
-  setLoading(btn,false);
-}
-
-// =====================================================
-// STORE PANEL
-// =====================================================
-function renderStore(){
-  $('store-name').textContent = currentUser.store || currentUser.username;
-}
-
-async function storeSearch(){
-  const lr = $('store-search-lr').value.trim();
-  if(!lr){ toast('Enter LR No','error'); return; }
-  const btn=$('btn-store-search');
-  setLoading(btn,true);
-  $('store-search-result').innerHTML='';
-  try {
-    const snap = await db.collection('lr_master').doc(lr).get();
-    if(!snap.exists){ toast('LR not found','error'); setLoading(btn,false); return; }
-    const d = snap.data();
-    if(currentUser.store && d.store !== currentUser.store){
-      toast('Access denied — not your store','error'); setLoading(btn,false); return;
-    }
-    const q = db.collection('invoices').where('lr_no','==',lr);
-    const invSnap = await q.get();
-    renderLRCard('store-search-result', lr, d, invSnap.docs.map(x=>x.data()), false);
-  } catch(e){ toast('Error: '+e.message,'error'); }
-  setLoading(btn,false);
-}
-
-// =====================================================
-// TRANSPORTER PANEL
-// =====================================================
-function renderTransporter(){
-  $('trans-name').textContent = currentUser.username;
-}
-
-async function transSearch(){
-  const lr = $('trans-lr').value.trim();
-  if(!lr){ toast('Enter LR No','error'); return; }
-  const btn=$('btn-trans-search');
-  setLoading(btn,true);
-  $('trans-result').innerHTML='';
-  $('trans-actions').style.display='none';
-  try {
-    const snap = await db.collection('lr_master').doc(lr).get();
-    if(!snap.exists){ toast('LR not found','error'); setLoading(btn,false); return; }
-    const d = snap.data();
-    const q = db.collection('invoices').where('lr_no','==',lr);
-    const invSnap = await q.get();
-    renderLRCard('trans-result', lr, d, invSnap.docs.map(x=>x.data()), false);
-    $('trans-status-select').value = d.status||'In Transit';
-    $('trans-actions').style.display='';
-    $('trans-actions').dataset.lr = lr;
-    if(d.photo_url){
-      $('trans-current-photo').innerHTML=`<a href="${d.photo_url}" target="_blank"><img src="${d.photo_url}" style="max-width:120px;border-radius:8px;margin-top:8px;"/></a>`;
-    } else {
-      $('trans-current-photo').innerHTML='<span style="color:var(--muted);font-size:0.8rem">No photo yet</span>';
-    }
-  } catch(e){ toast('Error: '+e.message,'error'); }
-  setLoading(btn,false);
-}
-
-async function transUpdate(){
-  const lr = $('trans-actions').dataset.lr;
-  const status = $('trans-status-select').value;
-  const btn=$('btn-trans-update');
-  setLoading(btn,true);
-  try {
-    await db.collection('lr_master').doc(lr).update({
-      status, last_updated: serverTimestamp(),
-      updated_by: currentUser.username
-    });
-    toast('Status updated!','success');
-  } catch(e){ toast('Error: '+e.message,'error'); }
-  setLoading(btn,false);
-}
-
-async function transUploadPhoto(){
-  const lr = $('trans-actions').dataset.lr;
-  const file = $('trans-photo-input').files[0];
-  if(!file){ toast('Select a photo','error'); return; }
-  const btn=$('btn-trans-photo');
-  setLoading(btn,true);
-  try {
-    const compressed = await compressImage(file, 800, 0.7);
-    const storageRef = storage.ref(`lr_copies/${lr}.jpg`);
-    await storageRef.put(compressed);
-    const url = await storageRef.getDownloadURL();
-    await db.collection('lr_master').doc(lr).update({ photo_url:url, last_updated:serverTimestamp() });
-    $('trans-current-photo').innerHTML=`<a href="${url}" target="_blank"><img src="${url}" style="max-width:120px;border-radius:8px;margin-top:8px;"/></a>`;
-    toast('Photo uploaded!','success');
-  } catch(e){ toast('Error: '+e.message,'error'); }
-  setLoading(btn,false);
-}
-
-// OCR via camera capture
-async function startOCR(){
-  const btn=$('btn-ocr');
-  setLoading(btn,true);
-  toast('Point camera at LR document…','info');
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:'environment' } });
-    const video = document.createElement('video');
-    video.srcObject=stream; video.play();
-    await new Promise(r=>video.onloadedmetadata=r);
-
-    const canvas = document.createElement('canvas');
-    canvas.width=video.videoWidth; canvas.height=video.videoHeight;
-    canvas.getContext('2d').drawImage(video,0,0);
-    stream.getTracks().forEach(t=>t.stop());
-
-    const blob = await new Promise(r=>canvas.toBlob(r,'image/jpeg',0.9));
-
-    // Use Anthropic API for OCR
-    const b64 = await blobToBase64(blob);
-    const resp = await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        model:'claude-sonnet-4-20250514',
-        max_tokens:200,
-        messages:[{
-          role:'user',
-          content:[
-            { type:'image', source:{ type:'base64', media_type:'image/jpeg', data:b64.split(',')[1] } },
-            { type:'text', text:'Extract only the LR number (lorry receipt number / consignment number) from this transport document. Return ONLY the number, nothing else. If not found, return NOT_FOUND.' }
-          ]
-        }]
-      })
-    });
-    const data = await resp.json();
-    const lrNo = data.content?.[0]?.text?.trim();
-    if(lrNo && lrNo!=='NOT_FOUND'){
-      $('trans-lr').value = lrNo;
-      toast(`LR detected: ${lrNo}`,'success');
-      transSearch();
-    } else {
-      toast('Could not read LR number — enter manually','error');
-    }
-  } catch(e){
-    toast('Camera error: '+e.message,'error');
-  }
-  setLoading(btn,false);
-}
-
-function blobToBase64(blob){
-  return new Promise(r=>{ const fr=new FileReader(); fr.onload=()=>r(fr.result); fr.readAsDataURL(blob); });
-}
-
-// =====================================================
-// ADMIN PANEL
-// =====================================================
-function renderAdmin(){
-  $('admin-username').textContent = currentUser.username;
-  adminTab('search');
-}
-
-function adminTab(t){
-  ['search','edit','users'].forEach(x=>{
-    $('admin-tab-'+x).classList.toggle('active', x===t);
-    $('admin-panel-'+x).style.display = x===t?'':'none';
-  });
-  if(t==='users') loadUserList();
-}
-
-async function adminSearch(){
-  const lr = $('admin-search-lr').value.trim();
-  if(!lr){ toast('Enter LR No','error'); return; }
-  const btn=$('btn-admin-search');
-  setLoading(btn,true);
-  $('admin-search-result').innerHTML='';
-  $('admin-edit-section').style.display='none';
-  try {
-    const snap = await db.collection('lr_master').doc(lr).get();
-    if(!snap.exists){ toast('LR not found','error'); setLoading(btn,false); return; }
-    const d = snap.data();
-    const q = db.collection('invoices').where('lr_no','==',lr);
-    const invSnap = await q.get();
-    renderLRCard('admin-search-result', lr, d, invSnap.docs.map(x=>x.data()), false);
-
-    // Show edit form
-    $('edit-lr-no').textContent = lr;
-    $('edit-status').value = d.status||'In Transit';
-    $('edit-transporter').value = d.transporter||'';
-    $('edit-vehicle').value = d.vehicle_no||'';
-    $('edit-store').value = d.store||'';
-    $('admin-edit-section').style.display='';
-    $('admin-edit-section').dataset.lr = lr;
-  } catch(e){ toast('Error: '+e.message,'error'); }
-  setLoading(btn,false);
-}
-
-async function adminSaveEdit(){
-  const lr = $('admin-edit-section').dataset.lr;
-  const btn=$('btn-admin-save');
-  setLoading(btn,true);
-  try {
-    await db.collection('lr_master').doc(lr).update({
-      status: $('edit-status').value,
-      transporter: $('edit-transporter').value,
-      vehicle_no: $('edit-vehicle').value,
-      store: $('edit-store').value,
-      last_updated: serverTimestamp(),
-      updated_by: currentUser.username
-    });
-    toast('LR updated!','success');
-    adminSearch();
-  } catch(e){ toast('Error: '+e.message,'error'); }
-  setLoading(btn,false);
-}
-
-async function adminDeleteLR(){
-  const lr = $('admin-edit-section').dataset.lr;
-  if(!confirm(`Delete LR ${lr} and all its invoices? This cannot be undone.`)) return;
-  const btn=$('btn-admin-delete');
-  setLoading(btn,true);
-  try {
-    const q = db.collection('invoices').where('lr_no','==',lr);
-    const invSnap = await q.get();
-    const batch = db.batch();
-    invSnap.docs.forEach(d=>batch.delete(d.ref));
-    batch.delete(db.collection('lr_master').doc(lr));
-    await batch.commit();
-    $('admin-search-result').innerHTML='';
-    $('admin-edit-section').style.display='none';
-    toast('LR deleted','success');
-  } catch(e){ toast('Error: '+e.message,'error'); }
-  setLoading(btn,false);
-}
-
-// USER MANAGEMENT
-async function loadUserList(){
-  $('user-list').innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--muted)">Loading…</td></tr>';
-  try {
-    const snap = await db.collection('users').get();
-    const rows = snap.docs.map(d=>({ id:d.id, ...d.data() }));
-    $('user-list').innerHTML = rows.map(u=>`
-      <tr>
-        <td>${u.id}</td>
-        <td><span class="badge badge-${u.role?.toLowerCase()}">${u.role}</span></td>
-        <td>${u.store||'—'}</td>
-        <td>${u.wh||'—'}</td>
-        <td><button class="btn btn-sm btn-danger" onclick="deleteUser('${u.id}')">Delete</button></td>
-      </tr>
-    `).join('');
-  } catch(e){ toast('Error: '+e.message,'error'); }
-}
-
-async function addUser(){
-  const username = $('new-username').value.trim();
-  const password = $('new-password').value.trim();
-  const role = $('new-role').value;
-  const store = $('new-store').value.trim();
-  const wh = $('new-wh').value.trim();
-
-  if(!username||!password||!role){ toast('Fill all required fields','error'); return; }
-  const btn=$('btn-add-user');
-  setLoading(btn,true);
-  try {
-    await db.collection('users').doc(username).set({
-      password, role,
-      store: store||null,
-      wh: wh||null,
-      created_by: currentUser.username,
-      created_time: serverTimestamp()
-    });
-    toast('User added!','success');
-    ['new-username','new-password','new-store','new-wh'].forEach(id=>$(id).value='');
-    loadUserList();
-  } catch(e){ toast('Error: '+e.message,'error'); }
-  setLoading(btn,false);
-}
-
-window.deleteUser = async function(username){
-  if(!confirm(`Delete user "${username}"?`)) return;
-  try {
-    await db.collection('users').doc(username).delete();
-    toast('User deleted','success');
-    loadUserList();
-  } catch(e){ toast('Error: '+e.message,'error'); }
-};
-
-// =====================================================
-// SHARED: RENDER LR CARD
-// =====================================================
-function renderLRCard(containerId, lr, d, invoices, showUploadTime){
-  const uploadTime = d.upload_time?.toDate ? d.upload_time.toDate() : null;
-  const now = new Date();
-  const diffHrs = uploadTime ? (now-uploadTime)/3600000 : null;
-  const locked = diffHrs && diffHrs>4;
-
-  const statusColors = {
-    'In Transit':'#f59e0b',
-    'Reached WH':'#3b82f6',
-    'Out for Delivery':'#8b5cf6',
-    'Delivered':'#10b981'
-  };
-  const sc = statusColors[d.status]||'#6b7280';
-
-  const invHtml = invoices.length ? `
-    <div class="inv-table-wrap">
-      <table class="inv-table">
-        <thead><tr><th>Invoice</th><th>Order</th><th>Store</th><th>Qty</th><th>Value</th><th>Boxes</th></tr></thead>
-        <tbody>${invoices.map(i=>`
-          <tr>
-            <td>${i.invoice_no}</td>
-            <td>${i.order_no}</td>
-            <td>${i.store}</td>
-            <td>${i.invoice_qty}</td>
-            <td>₹${Number(i.invoice_value).toLocaleString('en-IN')}</td>
-            <td>${i.box_count}</td>
-          </tr>`).join('')}
-        </tbody>
-      </table>
-    </div>` : '<p style="color:var(--muted);font-size:0.85rem">No invoices found</p>';
-
-  $(containerId).innerHTML = `
-    <div class="lr-card">
-      <div class="lr-card-header">
-        <div>
-          <div class="lr-no">LR: ${lr}</div>
-          <div class="lr-meta">${d.transporter||''} · ${d.vehicle_no||''}</div>
-        </div>
-        <span class="status-badge" style="background:${sc}20;color:${sc};border:1px solid ${sc}40">${d.status||'—'}</span>
-      </div>
-      <div class="lr-details">
-        <div class="lr-detail-row"><span>Store</span><strong>${d.store||'—'}</strong></div>
-        <div class="lr-detail-row"><span>From</span><strong>${d.from_location||'—'}</strong></div>
-        <div class="lr-detail-row"><span>LR Date</span><strong>${d.lr_date||'—'}</strong></div>
-        <div class="lr-detail-row"><span>Invoices</span><strong>${d.invoice_count||invoices.length}</strong></div>
-        ${d.photo_url?`<div class="lr-detail-row"><span>Photo</span><a href="${d.photo_url}" target="_blank" style="color:var(--accent)">View LR Copy</a></div>`:''}
-        ${showUploadTime && uploadTime?`<div class="lr-detail-row"><span>Uploaded</span><strong>${uploadTime.toLocaleString()} ${locked?'🔒 Locked':'🔓 Editable'}</strong></div>`:''}
-      </div>
-      <div style="margin-top:12px">${invHtml}</div>
-    </div>
-  `;
-}
-
-// =====================================================
-// FILE PARSING
-// =====================================================
-async function parseFile(file){
-  return new Promise((resolve,reject)=>{
-    const reader = new FileReader();
-    reader.onload = async (e)=>{
-      try {
-        if(file.name.endsWith('.csv')){
-          const text = e.target.result;
-          resolve(parseCSV(text));
-        } else {
-          // xlsx via SheetJS CDN
-          const data = new Uint8Array(e.target.result);
-          const wb = XLSX.read(data,{type:'array'});
-          const ws = wb.Sheets[wb.SheetNames[0]];
-          const json = XLSX.utils.sheet_to_json(ws,{defval:''});
-          // normalize columns
-          const normalized = json.map(row=>{
-            const newRow={};
-            Object.keys(row).forEach(k=>{
-              const clean = k.trim().replace(/\s+/g,' ').replace(/\n/g,'').toUpperCase();
-              newRow[clean]=row[k];
-            });
-            return newRow;
-          });
-          // rename
-          const mapped = normalized.map(r=>({
-            Order_No: r['ORDER NO.']||r['ORDER NO'],
-            Invoice_No: r['INVOICE NO'],
-            Inv_Date: r['INV DATE'],
-            Transfer_Location: r['TRANSFER LOCATION']||r['TRANSFER LOATION'],
-            Store: r['LOCATION'],
-            Transporter: r['TRANSPORTER NAME'],
-            LR_No: r['LR -NO']||r['LR NO'],
-            LR_Date: r['LR DATE'],
-            Vehicle_No: r['VEHICLE NO'],
-            Invoice_Qty: r['INVOICE QTY'],
-            Invoice_Value: r['INV VALUE'],
-            Box_Count: r['NO OF BOX']
-          }));
-          resolve(mapped);
-        }
-      } catch(err){ reject(err); }
-    };
-    if(file.name.endsWith('.csv')) reader.readAsText(file);
-    else reader.readAsArrayBuffer(file);
-  });
-}
-
-function parseCSV(text){
-  const lines = text.split('\n').filter(l=>l.trim());
-  const headers = lines[0].split(',').map(h=>h.trim().replace(/"/g,'').toUpperCase());
-  return lines.slice(1).map(line=>{
-    const vals = line.split(',').map(v=>v.trim().replace(/"/g,''));
-    const row={};
-    headers.forEach((h,i)=>row[h]=vals[i]||'');
-    // rename
-    return {
-      Order_No: row['ORDER NO.']||row['ORDER NO'],
-      Invoice_No: row['INVOICE NO'],
-      Transfer_Location: row['TRANSFER LOCATION']||row['TRANSFER LOATION'],
-      Store: row['LOCATION'],
-      Transporter: row['TRANSPORTER NAME'],
-      LR_No: row['LR -NO']||row['LR NO'],
-      LR_Date: row['LR DATE'],
-      Vehicle_No: row['VEHICLE NO'],
-      Invoice_Qty: row['INVOICE QTY'],
-      Invoice_Value: row['INV VALUE'],
-      Box_Count: row['NO OF BOX']
-    };
-  });
-}
-
-// =====================================================
-// IMAGE COMPRESSION
-// =====================================================
-function compressImage(file, maxW=800, quality=0.7){
-  return new Promise((resolve,reject)=>{
-    const img = new Image();
-    const url = URL.createObjectURL(file);
-    img.onload = ()=>{
-      let w=img.width, h=img.height;
-      if(w>maxW){ h=Math.round(h*maxW/w); w=maxW; }
-      const canvas=document.createElement('canvas');
-      canvas.width=w; canvas.height=h;
-      canvas.getContext('2d').drawImage(img,0,0,w,h);
-      canvas.toBlob(blob=>{ URL.revokeObjectURL(url); resolve(blob); },'image/jpeg',quality);
-    };
-    img.onerror=reject;
-    img.src=url;
-  });
-}
-
-// =====================================================
-// CSV DOWNLOAD
-// =====================================================
-function downloadCSV(rows, filename){
-  if(!rows.length){ toast('No data','error'); return; }
-  const headers = Object.keys(rows[0]);
-  const csv = [headers.join(','), ...rows.map(r=>headers.map(h=>JSON.stringify(r[h]??'')).join(','))].join('\n');
-  const a=document.createElement('a');
-  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
-  a.download=filename; a.click();
-}
-
-// FORMAT DOWNLOAD
-function downloadFormat(){
-  const headers = ['ORDER NO.','INVOICE NO','INV DATE','TRANSFER LOCATION','LOCATION','TRANSPORTER NAME','LR -NO','LR DATE','VEHICLE NO','INVOICE QTY','INV VALUE','NO OF BOX'];
-  const csv = headers.join(',')+'\n';
-  const a=document.createElement('a');
-  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
-  a.download='TMS_Upload_Format.csv'; a.click();
-}
-
-function log(id, msg){
-  const el=$(id);
-  el.innerHTML += `<div>${msg}</div>`;
-  el.scrollTop=el.scrollHeight;
-}
-
-// Expose to HTML
-window.login=login; window.logout=logout;
-window.whTab=whTab; window.whUpload=whUpload; window.whSearch=whSearch; window.whDownload=whDownload;
-window.storeSearch=storeSearch;
-window.transSearch=transSearch; window.transUpdate=transUpdate; window.transUploadPhoto=transUploadPhoto; window.startOCR=startOCR;
-window.adminTab=adminTab; window.adminSearch=adminSearch; window.adminSaveEdit=adminSaveEdit; window.adminDeleteLR=adminDeleteLR;
-window.addUser=addUser; window.loadUserList=loadUserList;
-window.downloadFormat=downloadFormat;
-
-// Force show login on page load
-window.onload = function(){
-  document.getElementById('page-login').style.display='flex';
-  document.getElementById('page-wh').style.display='none';
-  document.getElementById('page-store').style.display='none';
-  document.getElementById('page-transporter').style.display='none';
-  document.getElementById('page-admin').style.display='none';
-};
-
-// Enter key support
-document.addEventListener('keydown', function(e){
-  if(e.key==='Enter') login();
-});
-
-</script>
-
-<!-- SheetJS for Excel -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-
 <style>
-:root {
-  --bg: #0f1117;
-  --surface: #1a1d27;
-  --surface2: #22263a;
-  --border: #2e3248;
-  --text: #e8eaf6;
-  --muted: #6b7280;
-  --accent: #6c63ff;
-  --accent2: #00d4aa;
-  --danger: #ef4444;
-  --warning: #f59e0b;
-  --success: #10b981;
-  --radius: 12px;
-  --font: 'DM Sans', sans-serif;
-  --mono: 'Space Mono', monospace;
-}
-
-* { box-sizing:border-box; margin:0; padding:0; }
-
-body {
-  font-family: var(--font);
-  background: var(--bg);
-  color: var(--text);
-  min-height: 100vh;
-  font-size: 15px;
-}
-
-/* TOPBAR */
-.topbar {
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-  padding: 12px 20px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  position: sticky; top:0; z-index:100;
-}
-.topbar-brand {
-  font-family: var(--mono);
-  font-size: 1rem;
-  color: var(--accent);
-  letter-spacing: 0.05em;
-}
-.topbar-sub { font-size:0.75rem; color:var(--muted); margin-top:2px; }
-
-/* PAGES */
-.page { display:none; max-width:700px; margin:0 auto; padding:20px 16px 80px; }
-
-/* LOGIN */
-.login-wrap {
-  min-height:100vh;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  padding:24px;
-}
-.login-card {
-  background:var(--surface);
-  border:1px solid var(--border);
-  border-radius:20px;
-  padding:36px 32px;
-  width:100%;
-  max-width:380px;
-}
-.login-logo {
-  font-family:var(--mono);
-  font-size:1.6rem;
-  color:var(--accent);
-  margin-bottom:4px;
-  letter-spacing:0.1em;
-}
-.login-tagline { color:var(--muted); font-size:0.85rem; margin-bottom:28px; }
-
-/* INPUTS */
-.field { margin-bottom:14px; }
-.field label { display:block; font-size:0.78rem; color:var(--muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.08em; }
-input, select {
-  width:100%;
-  background:var(--surface2);
-  border:1px solid var(--border);
-  color:var(--text);
-  border-radius:8px;
-  padding:10px 12px;
-  font-size:0.95rem;
-  font-family:var(--font);
-  outline:none;
-  transition: border-color 0.2s;
-}
-input:focus, select:focus { border-color:var(--accent); }
-
-/* BUTTONS */
-.btn {
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  gap:6px;
-  padding:10px 20px;
-  border:none;
-  border-radius:8px;
-  font-family:var(--font);
-  font-size:0.9rem;
-  font-weight:600;
-  cursor:pointer;
-  transition: opacity 0.15s, transform 0.1s;
-}
-.btn:active { transform:scale(0.97); }
-.btn:disabled { opacity:0.5; cursor:not-allowed; }
-.btn-primary { background:var(--accent); color:#fff; width:100%; padding:12px; }
-.btn-secondary { background:var(--surface2); color:var(--text); border:1px solid var(--border); }
-.btn-success { background:var(--success); color:#fff; }
-.btn-danger { background:var(--danger); color:#fff; }
-.btn-outline { background:transparent; color:var(--accent); border:1px solid var(--accent); }
-.btn-sm { padding:6px 12px; font-size:0.8rem; border-radius:6px; }
-.btn-full { width:100%; }
-.btn-warn { background:var(--warning); color:#000; }
-
-/* TABS */
-.tabs { display:flex; gap:4px; background:var(--surface2); border-radius:10px; padding:4px; margin-bottom:20px; }
-.tab {
-  flex:1; padding:8px; text-align:center;
-  border-radius:7px; border:none;
-  background:transparent; color:var(--muted);
-  font-family:var(--font); font-size:0.85rem; font-weight:600;
-  cursor:pointer; transition:all 0.2s;
-}
-.tab.active { background:var(--accent); color:#fff; }
-
-/* SECTION HEADER */
-.section-header {
-  display:flex; align-items:center; justify-content:space-between;
-  margin-bottom:16px; padding-bottom:12px;
-  border-bottom:1px solid var(--border);
-}
-.section-title { font-size:1.1rem; font-weight:700; }
-.user-chip {
-  font-size:0.75rem; background:var(--surface2);
-  border:1px solid var(--border); border-radius:20px;
-  padding:4px 12px; color:var(--muted);
-}
-
-/* CARDS */
-.card {
-  background:var(--surface);
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-  padding:16px;
-  margin-bottom:16px;
-}
-.card-title { font-size:0.8rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:12px; }
-
-/* LR CARD */
-.lr-card {
-  background:var(--surface);
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-  padding:16px;
-  margin-top:16px;
-}
-.lr-card-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px; }
-.lr-no { font-family:var(--mono); font-size:1.1rem; color:var(--accent2); }
-.lr-meta { font-size:0.8rem; color:var(--muted); margin-top:3px; }
-.status-badge { font-size:0.75rem; font-weight:700; padding:4px 10px; border-radius:20px; white-space:nowrap; }
-.lr-details { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-.lr-detail-row { display:flex; flex-direction:column; gap:2px; }
-.lr-detail-row span { font-size:0.72rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.06em; }
-.lr-detail-row strong { font-size:0.9rem; }
-
-/* INVOICE TABLE */
-.inv-table-wrap { overflow-x:auto; margin-top:4px; border-radius:8px; border:1px solid var(--border); }
-.inv-table { width:100%; border-collapse:collapse; font-size:0.8rem; min-width:460px; }
-.inv-table th { background:var(--surface2); padding:8px 10px; text-align:left; color:var(--muted); font-size:0.72rem; text-transform:uppercase; letter-spacing:0.06em; }
-.inv-table td { padding:8px 10px; border-top:1px solid var(--border); }
-.inv-table tr:hover td { background:var(--surface2); }
-
-/* UPLOAD LOG */
-.upload-log {
-  background:var(--surface2); border:1px solid var(--border);
-  border-radius:8px; padding:12px; font-family:var(--mono);
-  font-size:0.78rem; max-height:200px; overflow-y:auto;
-  color:var(--accent2); margin-top:12px; display:none;
-}
-
-/* FILE INPUT */
-.file-drop {
-  border:2px dashed var(--border);
-  border-radius:10px; padding:24px;
-  text-align:center; cursor:pointer;
-  transition:border-color 0.2s;
-  position:relative;
-}
-.file-drop:hover { border-color:var(--accent); }
-.file-drop input[type=file] {
-  position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%;
-}
-.file-drop-text { color:var(--muted); font-size:0.85rem; }
-.file-drop-icon { font-size:2rem; margin-bottom:8px; }
-
-/* BADGES */
-.badge { display:inline-block; padding:3px 8px; border-radius:6px; font-size:0.72rem; font-weight:700; text-transform:uppercase; }
-.badge-admin { background:#6c63ff22; color:#6c63ff; }
-.badge-wh { background:#f59e0b22; color:#f59e0b; }
-.badge-store { background:#3b82f622; color:#3b82f6; }
-.badge-transporter { background:#10b98122; color:#10b981; }
-
-/* USER TABLE */
-.user-table-wrap { overflow-x:auto; border-radius:8px; border:1px solid var(--border); }
-.user-table { width:100%; border-collapse:collapse; font-size:0.85rem; }
-.user-table th { background:var(--surface2); padding:10px 12px; text-align:left; color:var(--muted); font-size:0.72rem; text-transform:uppercase; }
-.user-table td { padding:10px 12px; border-top:1px solid var(--border); }
-
-/* DIVIDER */
-.divider { height:1px; background:var(--border); margin:16px 0; }
-
-/* TOASTS */
-.toast {
-  position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px);
-  background:var(--surface); border:1px solid var(--border);
-  color:var(--text); padding:10px 20px; border-radius:8px;
-  font-size:0.85rem; font-weight:500; opacity:0;
-  transition:all 0.3s; z-index:9999; white-space:nowrap;
-  max-width:90vw; text-align:center;
-}
-.toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
-.toast-success { border-color:var(--success); color:var(--success); }
-.toast-error { border-color:var(--danger); color:var(--danger); }
-
-/* TRANSPORTER STATUS */
-.status-steps {
-  display:flex; gap:8px; flex-wrap:wrap; margin:10px 0;
-}
-.status-step {
-  flex:1; min-width:120px; padding:10px;
-  border-radius:8px; border:1px solid var(--border);
-  text-align:center; font-size:0.8rem; background:var(--surface2);
-  cursor:pointer; transition:all 0.2s;
-}
-.status-step.selected { border-color:var(--accent); background:var(--accent)22; color:var(--accent); }
-
-/* OCR BUTTON */
-.ocr-btn {
-  display:flex; align-items:center; gap:8px;
-  background:var(--surface2); border:1px solid var(--border);
-  border-radius:8px; padding:10px 16px;
-  color:var(--accent2); cursor:pointer;
-  font-family:var(--font); font-size:0.9rem; font-weight:600;
-  margin-bottom:12px; transition:all 0.2s;
-}
-.ocr-btn:hover { border-color:var(--accent2); }
-
-/* SEARCH ROW */
-.search-row { display:flex; gap:8px; }
-.search-row input { flex:1; }
-
-/* LOGOUT BTN */
-.logout-btn {
-  background:transparent; border:none;
-  color:var(--muted); font-family:var(--font);
-  font-size:0.8rem; cursor:pointer; padding:4px 8px;
-}
-.logout-btn:hover { color:var(--danger); }
-
-/* MOBILE */
-@media(max-width:500px){
-  .login-card { padding:28px 20px; }
-  .lr-details { grid-template-columns:1fr; }
-  .tabs { flex-wrap:wrap; }
-  .tab { flex:none; width:calc(50% - 4px); }
-}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#0f1117;color:#e8eaf6;min-height:100vh}
+.center{display:flex;align-items:center;justify-content:center;min-height:100vh}
+.card{background:#1a1d27;border:1px solid #2e3248;border-radius:16px;padding:32px;width:100%;max-width:380px}
+.logo{font-size:1.8rem;font-weight:800;color:#6c63ff;margin-bottom:4px;letter-spacing:.1em}
+.sub{color:#6b7280;font-size:.85rem;margin-bottom:24px}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:.75rem;color:#6b7280;margin-bottom:5px;text-transform:uppercase;letter-spacing:.06em}
+input,select{width:100%;background:#22263a;border:1px solid #2e3248;color:#e8eaf6;border-radius:8px;padding:10px 12px;font-size:.95rem;outline:none}
+input:focus,select:focus{border-color:#6c63ff}
+.btn{display:block;width:100%;padding:12px;border:none;border-radius:8px;font-size:.95rem;font-weight:700;cursor:pointer;margin-top:8px}
+.btn-purple{background:#6c63ff;color:#fff}
+.btn-green{background:#10b981;color:#fff}
+.btn-gray{background:#22263a;color:#e8eaf6;border:1px solid #2e3248}
+.btn-red{background:#ef4444;color:#fff}
+.btn-teal{background:transparent;color:#00d4aa;border:1px solid #00d4aa}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-sm{width:auto;padding:6px 12px;font-size:.8rem;border-radius:6px}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(30px);background:#1a1d27;border:1px solid #2e3248;color:#e8eaf6;padding:10px 20px;border-radius:8px;font-size:.85rem;opacity:0;transition:all .3s;z-index:9999;pointer-events:none}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.ok{border-color:#10b981;color:#10b981}
+.toast.err{border-color:#ef4444;color:#ef4444}
+.page{display:none;max-width:700px;margin:0 auto;padding:16px 16px 80px}
+.topbar{background:#1a1d27;border-bottom:1px solid #2e3248;padding:12px 20px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100}
+.brand{font-weight:800;color:#6c63ff;font-size:1rem;letter-spacing:.05em}
+.role-tag{font-size:.75rem;color:#6b7280}
+.logout{background:none;border:none;color:#6b7280;cursor:pointer;font-size:.8rem}
+.logout:hover{color:#ef4444}
+.tabs{display:flex;gap:4px;background:#22263a;border-radius:10px;padding:4px;margin:16px 0}
+.tab{flex:1;padding:8px;text-align:center;border:none;background:transparent;color:#6b7280;font-size:.85rem;font-weight:700;cursor:pointer;border-radius:7px;transition:all .2s}
+.tab.on{background:#6c63ff;color:#fff}
+.box{background:#1a1d27;border:1px solid #2e3248;border-radius:12px;padding:16px;margin-bottom:14px}
+.box-title{font-size:.75rem;color:#6b7280;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px}
+.row{display:flex;gap:8px;align-items:center}
+.row input{flex:1}
+.lr-card{background:#1a1d27;border:1px solid #2e3248;border-radius:12px;padding:16px;margin-top:14px}
+.lr-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}
+.lr-num{font-size:1.1rem;font-weight:800;color:#00d4aa;font-family:monospace}
+.lr-meta{font-size:.78rem;color:#6b7280;margin-top:2px}
+.badge{font-size:.72rem;font-weight:800;padding:4px 10px;border-radius:20px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.kv span{font-size:.7rem;color:#6b7280;text-transform:uppercase;display:block}
+.kv strong{font-size:.88rem}
+.tbl-wrap{overflow-x:auto;border-radius:8px;border:1px solid #2e3248;margin-top:8px}
+table{width:100%;border-collapse:collapse;font-size:.78rem;min-width:420px}
+th{background:#22263a;padding:8px 10px;text-align:left;color:#6b7280;font-size:.7rem;text-transform:uppercase}
+td{padding:8px 10px;border-top:1px solid #2e3248}
+.drop{border:2px dashed #2e3248;border-radius:10px;padding:20px;text-align:center;position:relative;cursor:pointer}
+.drop input[type=file]{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer}
+.drop-icon{font-size:1.8rem;margin-bottom:6px}
+.drop-text{color:#6b7280;font-size:.82rem}
+.log{background:#22263a;border:1px solid #2e3248;border-radius:8px;padding:10px;font-family:monospace;font-size:.75rem;max-height:180px;overflow-y:auto;color:#00d4aa;margin-top:10px;display:none}
+.utbl{width:100%;border-collapse:collapse;font-size:.82rem}
+.utbl th{background:#22263a;padding:8px 10px;text-align:left;color:#6b7280;font-size:.7rem;text-transform:uppercase}
+.utbl td{padding:8px 10px;border-top:1px solid #2e3248}
+.chip{display:inline-block;padding:2px 8px;border-radius:6px;font-size:.7rem;font-weight:800;text-transform:uppercase}
+.chip-wh{background:#f59e0b22;color:#f59e0b}
+.chip-store{background:#3b82f622;color:#3b82f6}
+.chip-transporter{background:#10b98122;color:#10b981}
+.chip-admin{background:#6c63ff22;color:#6c63ff}
+@media(max-width:480px){.grid2{grid-template-columns:1fr}.tabs{flex-wrap:wrap}.tab{flex:none;width:calc(50% - 4px)}}
 </style>
 </head>
 <body>
 
-<!-- ERROR DISPLAY (catches JS crashes) -->
-<div id="js-error" style="display:none;position:fixed;top:0;left:0;right:0;background:#ef4444;color:white;padding:12px;font-family:monospace;font-size:13px;z-index:99999"></div>
-<script>
-window.onerror = function(msg, src, line, col, err){
-  var d = document.getElementById('js-error');
-  d.style.display='block';
-  d.textContent = '❌ JS Error: ' + msg + ' (line ' + line + ')';
-};
-</script>
+<div id="toast" class="toast"></div>
 
-<!-- ===================== LOGIN ===================== -->
-<div id="page-login" class="login-wrap" style="display:flex">
-  <div class="login-card">
-    <div class="login-logo">TMS</div>
-    <div class="login-tagline">Transport Management System</div>
-    <div class="field">
-      <label>Username</label>
-      <input id="inp-user" type="text" placeholder="Enter username" autocomplete="username"/>
-    </div>
-    <div class="field">
-      <label>Password</label>
-      <input id="inp-pwd" type="password" placeholder="Enter password" autocomplete="current-password"/>
-    </div>
-    <button class="btn btn-primary" id="btn-login" onclick="login()">Login</button>
+<!-- LOGIN -->
+<div id="pg-login" class="center">
+  <div class="card">
+    <div class="logo">TMS</div>
+    <div class="sub">Transport Management System</div>
+    <div class="field"><label>Username</label><input id="u" placeholder="Enter username"/></div>
+    <div class="field"><label>Password</label><input id="p" type="password" placeholder="Enter password"/></div>
+    <button class="btn btn-purple" id="btn-login" onclick="doLogin()">Login</button>
+    <div id="login-msg" style="margin-top:10px;font-size:.82rem;color:#ef4444;text-align:center"></div>
   </div>
 </div>
 
-<!-- ===================== WH PANEL ===================== -->
-<div id="page-wh" class="page" style="display:none">
-  <div class="topbar" style="max-width:700px;margin:0 auto;position:relative">
-    <div>
-      <div class="topbar-brand">TMS</div>
-      <div class="topbar-sub">Warehouse · <span id="wh-username"></span></div>
-    </div>
-    <button class="logout-btn" onclick="logout()">Logout</button>
-  </div>
-  <div style="height:16px"></div>
-
+<!-- WH -->
+<div id="pg-wh" class="page">
+  <div class="topbar"><div><div class="brand">TMS</div><div class="role-tag">Warehouse · <span id="wh-name"></span></div></div><button class="logout" onclick="doLogout()">Logout</button></div>
   <div class="tabs">
-    <button class="tab" id="wh-tab-upload" onclick="whTab('upload')">📤 Upload</button>
-    <button class="tab" id="wh-tab-search" onclick="whTab('search')">🔍 Search</button>
-    <button class="tab" id="wh-tab-download" onclick="whTab('download')">⬇ Download</button>
+    <button class="tab" id="t-up" onclick="whTab('up')">📤 Upload</button>
+    <button class="tab" id="t-sr" onclick="whTab('sr')">🔍 Search</button>
+    <button class="tab" id="t-dl" onclick="whTab('dl')">⬇ Download</button>
   </div>
-
-  <!-- UPLOAD -->
-  <div id="wh-panel-upload">
-    <div class="card">
-      <div class="card-title">Upload LR Data</div>
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-        <span style="font-size:0.82rem;color:var(--muted)">Use the standard format below</span>
-        <button class="btn btn-sm btn-outline" onclick="downloadFormat()">⬇ Format</button>
+  <div id="p-up">
+    <div class="box"><div class="box-title">Upload LR File</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <span style="font-size:.8rem;color:#6b7280">Excel or CSV in standard format</span>
+        <button class="btn btn-teal btn-sm" onclick="dlFormat()">⬇ Format</button>
       </div>
-      <div class="file-drop">
-        <input type="file" id="wh-file" accept=".xlsx,.csv"/>
-        <div class="file-drop-icon">📂</div>
-        <div class="file-drop-text">Click or drag Excel / CSV file here</div>
-      </div>
-      <div style="margin-top:4px;font-size:0.75rem;color:var(--muted)">⚠ LRs can be overwritten within 4 hours of upload. After 4 hours, contact Admin.</div>
-      <div style="margin-top:12px">
-        <button class="btn btn-success btn-full" id="btn-wh-upload" onclick="whUpload();$('wh-upload-log').style.display='block'">Upload / Reupload</button>
-      </div>
-      <div class="upload-log" id="wh-upload-log"></div>
+      <div class="drop"><input type="file" id="wh-file" accept=".xlsx,.csv"/><div class="drop-icon">📂</div><div class="drop-text">Click or drag file here</div></div>
+      <div style="margin-top:6px;font-size:.72rem;color:#6b7280">⚠ Within 4 hours you can overwrite. After 4h only Admin can edit.</div>
+      <button class="btn btn-green" id="btn-up" style="margin-top:10px" onclick="doUpload()">Upload</button>
+      <div class="log" id="up-log"></div>
     </div>
   </div>
-
-  <!-- SEARCH -->
-  <div id="wh-panel-search" style="display:none">
-    <div class="card">
-      <div class="card-title">Search LR</div>
-      <div class="search-row">
-        <input id="wh-search-lr" type="text" placeholder="Enter LR No" style="text-transform:uppercase"/>
-        <button class="btn btn-secondary" id="btn-wh-search" onclick="whSearch()">Search</button>
-      </div>
+  <div id="p-sr" style="display:none">
+    <div class="box"><div class="box-title">Search LR</div>
+      <div class="row"><input id="wh-lr" placeholder="LR Number"/><button class="btn btn-gray btn-sm" onclick="doWhSearch()">Search</button></div>
     </div>
-    <div id="wh-search-result"></div>
+    <div id="wh-result"></div>
   </div>
-
-  <!-- DOWNLOAD -->
-  <div id="wh-panel-download" style="display:none">
-    <div class="card">
-      <div class="card-title">Download All LR Data</div>
-      <p style="color:var(--muted);font-size:0.85rem;margin-bottom:14px">Export all LR master records as CSV.</p>
-      <button class="btn btn-outline btn-full" id="btn-wh-download" onclick="whDownload()">⬇ Download CSV</button>
+  <div id="p-dl" style="display:none">
+    <div class="box"><div class="box-title">Download All Data</div>
+      <p style="color:#6b7280;font-size:.85rem;margin-bottom:12px">Export all LR master records as CSV.</p>
+      <button class="btn btn-teal" onclick="doDl()">⬇ Download CSV</button>
     </div>
   </div>
 </div>
 
-<!-- ===================== STORE PANEL ===================== -->
-<div id="page-store" class="page" style="display:none">
-  <div class="topbar" style="max-width:700px;margin:0 auto;position:relative">
-    <div>
-      <div class="topbar-brand">TMS</div>
-      <div class="topbar-sub">Store · <span id="store-name"></span></div>
-    </div>
-    <button class="logout-btn" onclick="logout()">Logout</button>
-  </div>
+<!-- STORE -->
+<div id="pg-store" class="page">
+  <div class="topbar"><div><div class="brand">TMS</div><div class="role-tag">Store · <span id="store-name"></span></div></div><button class="logout" onclick="doLogout()">Logout</button></div>
   <div style="height:16px"></div>
-
-  <div class="card">
-    <div class="card-title">Track Your Shipment</div>
-    <div class="search-row">
-      <input id="store-search-lr" type="text" placeholder="Enter LR No" style="text-transform:uppercase"/>
-      <button class="btn btn-secondary" id="btn-store-search" onclick="storeSearch()">Track</button>
-    </div>
+  <div class="box"><div class="box-title">Track Shipment</div>
+    <div class="row"><input id="store-lr" placeholder="Enter LR Number"/><button class="btn btn-gray btn-sm" onclick="doStoreSearch()">Track</button></div>
   </div>
-  <div id="store-search-result"></div>
+  <div id="store-result"></div>
 </div>
 
-<!-- ===================== TRANSPORTER PANEL ===================== -->
-<div id="page-transporter" class="page" style="display:none">
-  <div class="topbar" style="max-width:700px;margin:0 auto;position:relative">
-    <div>
-      <div class="topbar-brand">TMS</div>
-      <div class="topbar-sub">Transporter · <span id="trans-name"></span></div>
-    </div>
-    <button class="logout-btn" onclick="logout()">Logout</button>
-  </div>
+<!-- TRANSPORTER -->
+<div id="pg-trans" class="page">
+  <div class="topbar"><div><div class="brand">TMS</div><div class="role-tag">Transporter · <span id="trans-name"></span></div></div><button class="logout" onclick="doLogout()">Logout</button></div>
   <div style="height:16px"></div>
-
-  <div class="card">
-    <div class="card-title">Find LR</div>
-    <button class="ocr-btn btn" id="btn-ocr" onclick="startOCR()">
-      📷 Scan LR Document
-    </button>
-    <div style="font-size:0.75rem;color:var(--muted);text-align:center;margin-bottom:10px">— or type manually —</div>
-    <div class="search-row">
-      <input id="trans-lr" type="text" placeholder="Enter LR No" style="text-transform:uppercase"/>
-      <button class="btn btn-secondary" id="btn-trans-search" onclick="transSearch()">Search</button>
-    </div>
+  <div class="box"><div class="box-title">Find LR</div>
+    <button class="btn btn-gray" id="btn-ocr" style="margin-bottom:10px" onclick="doOCR()">📷 Scan LR Document</button>
+    <div style="text-align:center;color:#6b7280;font-size:.75rem;margin-bottom:8px">— or type manually —</div>
+    <div class="row"><input id="trans-lr" placeholder="LR Number"/><button class="btn btn-gray btn-sm" onclick="doTransSearch()">Search</button></div>
   </div>
-
   <div id="trans-result"></div>
-
-  <!-- ACTIONS (shown after search) -->
-  <div id="trans-actions" style="display:none" data-lr="">
-    <div class="card" style="margin-top:0">
-      <div class="card-title">Update Status</div>
-      <select id="trans-status-select" style="margin-bottom:12px">
-        <option>In Transit</option>
-        <option>Reached WH</option>
-        <option>Out for Delivery</option>
-        <option>Delivered</option>
+  <div id="trans-actions" style="display:none">
+    <div class="box"><div class="box-title">Update Status</div>
+      <select id="trans-status" style="margin-bottom:10px">
+        <option>In Transit</option><option>Reached WH</option><option>Out for Delivery</option><option>Delivered</option>
       </select>
-      <button class="btn btn-success btn-full" id="btn-trans-update" onclick="transUpdate()">Update Status</button>
+      <button class="btn btn-green" onclick="doStatusUpdate()">Update Status</button>
     </div>
-
-    <div class="card">
-      <div class="card-title">Upload LR Copy Photo</div>
-      <div id="trans-current-photo" style="margin-bottom:10px"></div>
-      <div class="file-drop" style="padding:16px">
-        <input type="file" id="trans-photo-input" accept="image/*" capture="environment"/>
-        <div class="file-drop-icon" style="font-size:1.5rem">📷</div>
-        <div class="file-drop-text" style="font-size:0.8rem">Tap to take photo or choose from gallery<br><span style="font-size:0.72rem;color:var(--accent2)">Auto-compressed to &lt;200KB</span></div>
+    <div class="box"><div class="box-title">Upload LR Copy Photo</div>
+      <div id="curr-photo" style="margin-bottom:8px"></div>
+      <div class="drop" style="padding:14px">
+        <input type="file" id="photo-file" accept="image/*" capture="environment"/>
+        <div class="drop-icon" style="font-size:1.4rem">📷</div>
+        <div class="drop-text" style="font-size:.78rem">Tap to capture or choose<br><span style="color:#00d4aa;font-size:.7rem">Auto compressed &lt;200KB</span></div>
       </div>
-      <button class="btn btn-outline btn-full" id="btn-trans-photo" onclick="transUploadPhoto()" style="margin-top:10px">Upload Photo</button>
+      <button class="btn btn-teal" style="margin-top:8px" onclick="doPhotoUpload()">Upload Photo</button>
     </div>
   </div>
 </div>
 
-<!-- ===================== ADMIN PANEL ===================== -->
-<div id="page-admin" class="page" style="display:none">
-  <div class="topbar" style="max-width:700px;margin:0 auto;position:relative">
-    <div>
-      <div class="topbar-brand">TMS</div>
-      <div class="topbar-sub">Admin · <span id="admin-username"></span></div>
-    </div>
-    <button class="logout-btn" onclick="logout()">Logout</button>
-  </div>
-  <div style="height:16px"></div>
-
+<!-- ADMIN -->
+<div id="pg-admin" class="page">
+  <div class="topbar"><div><div class="brand">TMS</div><div class="role-tag">Admin · <span id="admin-name"></span></div></div><button class="logout" onclick="doLogout()">Logout</button></div>
   <div class="tabs">
-    <button class="tab" id="admin-tab-search" onclick="adminTab('search')">🔍 Search & Edit</button>
-    <button class="tab" id="admin-tab-users" onclick="adminTab('users')">👥 Users</button>
+    <button class="tab" id="at-lr" onclick="adminTab('lr')">🔍 LR Search</button>
+    <button class="tab" id="at-users" onclick="adminTab('users')">👥 Users</button>
   </div>
-
-  <!-- SEARCH & EDIT -->
-  <div id="admin-panel-search">
-    <div class="card">
-      <div class="card-title">Search Any LR</div>
-      <div class="search-row">
-        <input id="admin-search-lr" type="text" placeholder="Enter LR No" style="text-transform:uppercase"/>
-        <button class="btn btn-secondary" id="btn-admin-search" onclick="adminSearch()">Search</button>
-      </div>
+  <div id="ap-lr">
+    <div class="box"><div class="box-title">Search Any LR</div>
+      <div class="row"><input id="admin-lr" placeholder="LR Number"/><button class="btn btn-gray btn-sm" onclick="doAdminSearch()">Search</button></div>
     </div>
-
-    <div id="admin-search-result"></div>
-
-    <!-- EDIT FORM -->
-    <div id="admin-edit-section" style="display:none" data-lr="">
-      <div class="card">
-        <div class="card-title">Edit LR · <span id="edit-lr-no" style="color:var(--accent2);font-family:var(--mono)"></span></div>
-        <div class="field">
-          <label>Status</label>
-          <select id="edit-status">
-            <option>In Transit</option>
-            <option>Reached WH</option>
-            <option>Out for Delivery</option>
-            <option>Delivered</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>Transporter</label>
-          <input id="edit-transporter" type="text"/>
-        </div>
-        <div class="field">
-          <label>Vehicle No</label>
-          <input id="edit-vehicle" type="text"/>
-        </div>
-        <div class="field">
-          <label>Store</label>
-          <input id="edit-store" type="text"/>
-        </div>
-        <div style="display:flex;gap:10px;margin-top:4px">
-          <button class="btn btn-success" id="btn-admin-save" onclick="adminSaveEdit()" style="flex:2">💾 Save Changes</button>
-          <button class="btn btn-danger" id="btn-admin-delete" onclick="adminDeleteLR()" style="flex:1">🗑 Delete LR</button>
+    <div id="admin-result"></div>
+    <div id="admin-edit" style="display:none">
+      <div class="box"><div class="box-title">Edit LR · <span id="edit-lr-id" style="color:#00d4aa;font-family:monospace"></span></div>
+        <div class="field"><label>Status</label><select id="e-status"><option>In Transit</option><option>Reached WH</option><option>Out for Delivery</option><option>Delivered</option></select></div>
+        <div class="field"><label>Transporter</label><input id="e-trans"/></div>
+        <div class="field"><label>Vehicle No</label><input id="e-veh"/></div>
+        <div class="field"><label>Store</label><input id="e-store"/></div>
+        <div class="row" style="margin-top:8px">
+          <button class="btn btn-green btn-sm" onclick="doSaveEdit()">💾 Save</button>
+          <button class="btn btn-red btn-sm" onclick="doDeleteLR()">🗑 Delete LR</button>
         </div>
       </div>
     </div>
   </div>
-
-  <!-- USER MANAGEMENT -->
-  <div id="admin-panel-users" style="display:none">
-    <div class="card">
-      <div class="card-title">Add New User</div>
-      <div class="field">
-        <label>Username *</label>
-        <input id="new-username" type="text" placeholder="e.g. wh_mumbai"/>
+  <div id="ap-users" style="display:none">
+    <div class="box"><div class="box-title">Add User</div>
+      <div class="field"><label>Username *</label><input id="nu" placeholder="e.g. wh_mumbai"/></div>
+      <div class="field"><label>Password *</label><input id="np" placeholder="Set password"/></div>
+      <div class="field"><label>Role *</label>
+        <select id="nr"><option value="">Select…</option><option value="WH">WH</option><option value="Store">Store</option><option value="Transporter">Transporter</option><option value="Admin">Admin</option></select>
       </div>
-      <div class="field">
-        <label>Password *</label>
-        <input id="new-password" type="text" placeholder="Set password"/>
-      </div>
-      <div class="field">
-        <label>Role *</label>
-        <select id="new-role">
-          <option value="">Select role…</option>
-          <option value="WH">WH (Warehouse)</option>
-          <option value="Store">Store</option>
-          <option value="Transporter">Transporter</option>
-          <option value="Admin">Admin</option>
-        </select>
-      </div>
-      <div class="field">
-        <label>Store (for Store role)</label>
-        <input id="new-store" type="text" placeholder="e.g. STORE_DELHI"/>
-      </div>
-      <div class="field">
-        <label>WH Name (for WH role)</label>
-        <input id="new-wh" type="text" placeholder="e.g. WH_MUMBAI"/>
-      </div>
-      <button class="btn btn-primary" id="btn-add-user" onclick="addUser()">Add User</button>
+      <div class="field"><label>Store (if Store role)</label><input id="ns" placeholder="e.g. STORE_DELHI"/></div>
+      <div class="field"><label>WH Name (if WH role)</label><input id="nw" placeholder="e.g. WH_MUMBAI"/></div>
+      <button class="btn btn-purple" onclick="doAddUser()">Add User</button>
     </div>
-
-    <div class="card">
-      <div class="card-title">All Users</div>
-      <div class="user-table-wrap">
-        <table class="user-table">
-          <thead><tr><th>Username</th><th>Role</th><th>Store</th><th>WH</th><th></th></tr></thead>
-          <tbody id="user-list">
-            <tr><td colspan="5" style="text-align:center;color:var(--muted);padding:20px">Loading…</td></tr>
-          </tbody>
-        </table>
-      </div>
+    <div class="box"><div class="box-title">All Users</div>
+      <div style="overflow-x:auto"><table class="utbl"><thead><tr><th>Username</th><th>Role</th><th>Store</th><th>WH</th><th></th></tr></thead>
+      <tbody id="user-list"><tr><td colspan="5" style="text-align:center;color:#6b7280;padding:16px">Loading…</td></tr></tbody></table></div>
     </div>
   </div>
 </div>
 
+<!-- Load Firebase AFTER page renders -->
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<script>
+// ── FIREBASE INIT ──────────────────────────────────────
+firebase.initializeApp({
+  apiKey:"AIzaSyAPu5_BwUEu_xXdpXkmOJbuErGCGYqBUeE",
+  authDomain:"wh-logistics-system.firebaseapp.com",
+  projectId:"wh-logistics-system",
+  storageBucket:"wh-logistics-system.firebasestorage.app",
+  messagingSenderId:"279467148642",
+  appId:"1:279467148642:web:c458996bca6c85ed33983b"
+});
+const db = firebase.firestore();
+const st = firebase.storage();
+const TS = () => firebase.firestore.FieldValue.serverTimestamp();
+
+// ── STATE ──────────────────────────────────────────────
+let CU = null; // current user
+
+// ── UTILS ─────────────────────────────────────────────
+const $= id => document.getElementById(id);
+function toast(msg, type=''){
+  const t=$('toast'); t.textContent=msg; t.className='toast '+(type==='ok'?'ok':type==='err'?'err':'');
+  setTimeout(()=>t.classList.add('on'),10);
+  setTimeout(()=>t.classList.remove('on'),3000);
+}
+function showPage(id){
+  ['pg-login','pg-wh','pg-store','pg-trans','pg-admin'].forEach(p=>{
+    const el=$(p);
+    if(el) el.style.display = p===id ? (p==='pg-login'?'flex':'block') : 'none';
+  });
+}
+function btn(id,on){const b=$(id);if(b){b.disabled=!on;b.style.opacity=on?'1':'.5';}}
+
+// ── LOGIN ──────────────────────────────────────────────
+async function doLogin(){
+  const user=$('u').value.trim(), pwd=$('p').value.trim();
+  if(!user||!pwd){$('login-msg').textContent='Enter username and password';return;}
+  $('login-msg').textContent='';
+  btn('btn-login',false);
+  try{
+    const snap = await db.collection('users').doc(user).get();
+    if(!snap.exists){$('login-msg').textContent='User not found';btn('btn-login',true);return;}
+    const d=snap.data();
+    if(d.password!==pwd){$('login-msg').textContent='Wrong password';btn('btn-login',true);return;}
+    CU={username:user,role:d.role,store:d.store||null,wh:d.wh||null};
+    goRole();
+  }catch(e){$('login-msg').textContent='Error: '+e.message;}
+  btn('btn-login',true);
+}
+
+function doLogout(){CU=null;$('u').value='';$('p').value='';$('login-msg').textContent='';showPage('pg-login');}
+
+function goRole(){
+  const r=CU.role;
+  if(r==='WH'){showPage('pg-wh');$('wh-name').textContent=CU.username;whTab('up');}
+  else if(r==='Store'){showPage('pg-store');$('store-name').textContent=CU.store||CU.username;}
+  else if(r==='Transporter'){showPage('pg-trans');$('trans-name').textContent=CU.username;}
+  else if(r==='Admin'){showPage('pg-admin');$('admin-name').textContent=CU.username;adminTab('lr');}
+}
+
+// ── WH ────────────────────────────────────────────────
+function whTab(t){
+  ['up','sr','dl'].forEach(x=>{
+    $('t-'+x).classList.toggle('on',x===t);
+    $('p-'+x).style.display=x===t?'':'none';
+  });
+}
+
+function addLog(msg){const l=$('up-log');l.style.display='block';l.innerHTML+=`<div>${msg}</div>`;l.scrollTop=l.scrollHeight;}
+
+async function doUpload(){
+  const file=$('wh-file').files[0];
+  if(!file){toast('Select a file','err');return;}
+  btn('btn-up',false); $('up-log').innerHTML=''; $('up-log').style.display='block';
+  try{
+    addLog('📂 Reading file…');
+    const rows = await parseFile(file);
+    addLog(`📋 ${rows.length} rows loaded`);
+    const grouped={};
+    rows.filter(r=>r.LR_No&&r.Invoice_No).forEach(r=>{
+      const lr=String(r.LR_No).trim();
+      if(!grouped[lr])grouped[lr]=[];
+      grouped[lr].push(r);
+    });
+    const now=new Date(); let done=0,skip=0,over=0;
+    for(const lr of Object.keys(grouped)){
+      const group=grouped[lr];
+      const lrRef=db.collection('lr_master').doc(lr);
+      const snap=await lrRef.get();
+      let allow=true;
+      if(snap.exists){
+        const ut=snap.data().upload_time?.toDate?snap.data().upload_time.toDate():new Date(snap.data().upload_time);
+        const hrs=(now-ut)/3600000;
+        if(hrs<=4){over++;}
+        else{skip++;allow=false;addLog(`⛔ LR ${lr} locked (>4h)`);}
+      }
+      if(!allow)continue;
+      const f=group[0];
+      await lrRef.set({status:'In Transit',lr_date:String(f.LR_Date||''),transporter:String(f.Transporter||''),vehicle_no:String(f.Vehicle_No||''),from_location:String(f.Transfer_Location||''),store:String(f.Store||''),upload_time:TS(),created_time:TS(),last_updated:TS(),created_by:CU.username,wh:CU.wh||CU.username,invoice_count:group.length});
+      for(const row of group){
+        await db.collection('invoices').add({invoice_no:String(row.Invoice_No||''),order_no:String(row.Order_No||''),lr_no:lr,store:String(row.Store||''),invoice_qty:parseFloat(row.Invoice_Qty)||0,invoice_value:parseFloat(row.Invoice_Value)||0,box_count:parseInt(row.Box_Count)||0,status:'In Transit',created_time:TS()});
+        done++;
+      }
+    }
+    addLog(`✅ Done! Invoices: ${done} | Overwritten: ${over} | Skipped: ${skip}`);
+    toast('Upload complete!','ok');
+  }catch(e){addLog('❌ '+e.message);toast('Upload failed','err');}
+  btn('btn-up',true);
+}
+
+async function doWhSearch(){
+  const lr=$('wh-lr').value.trim().toUpperCase();
+  if(!lr){toast('Enter LR No','err');return;}
+  $('wh-result').innerHTML='';
+  try{
+    const s=await db.collection('lr_master').doc(lr).get();
+    if(!s.exists){toast('LR not found','err');return;}
+    const invs=(await db.collection('invoices').where('lr_no','==',lr).get()).docs.map(d=>d.data());
+    $('wh-result').innerHTML=lrCard(lr,s.data(),invs,true);
+  }catch(e){toast('Error: '+e.message,'err');}
+}
+
+async function doDl(){
+  try{
+    const s=await db.collection('lr_master').get();
+    csvDl(s.docs.map(d=>({lr_no:d.id,...d.data()})),'TMS_Data.csv');
+    toast('Downloaded','ok');
+  }catch(e){toast('Error: '+e.message,'err');}
+}
+
+// ── STORE ─────────────────────────────────────────────
+async function doStoreSearch(){
+  const lr=$('store-lr').value.trim().toUpperCase();
+  if(!lr){toast('Enter LR No','err');return;}
+  $('store-result').innerHTML='';
+  try{
+    const s=await db.collection('lr_master').doc(lr).get();
+    if(!s.exists){toast('LR not found','err');return;}
+    const d=s.data();
+    if(CU.store&&d.store!==CU.store){toast('Access denied','err');return;}
+    const invs=(await db.collection('invoices').where('lr_no','==',lr).get()).docs.map(d=>d.data());
+    $('store-result').innerHTML=lrCard(lr,d,invs,false);
+  }catch(e){toast('Error: '+e.message,'err');}
+}
+
+// ── TRANSPORTER ───────────────────────────────────────
+async function doTransSearch(){
+  const lr=$('trans-lr').value.trim().toUpperCase();
+  if(!lr){toast('Enter LR No','err');return;}
+  $('trans-result').innerHTML=''; $('trans-actions').style.display='none';
+  try{
+    const s=await db.collection('lr_master').doc(lr).get();
+    if(!s.exists){toast('LR not found','err');return;}
+    const d=s.data();
+    const invs=(await db.collection('invoices').where('lr_no','==',lr).get()).docs.map(x=>x.data());
+    $('trans-result').innerHTML=lrCard(lr,d,invs,false);
+    $('trans-status').value=d.status||'In Transit';
+    $('trans-actions').style.display='';
+    $('trans-actions').dataset.lr=lr;
+    $('curr-photo').innerHTML=d.photo_url?`<a href="${d.photo_url}" target="_blank"><img src="${d.photo_url}" style="max-width:100px;border-radius:8px"/></a>`:'<span style="color:#6b7280;font-size:.8rem">No photo yet</span>';
+  }catch(e){toast('Error: '+e.message,'err');}
+}
+
+async function doStatusUpdate(){
+  const lr=$('trans-actions').dataset.lr;
+  const status=$('trans-status').value;
+  try{
+    await db.collection('lr_master').doc(lr).update({status,last_updated:TS(),updated_by:CU.username});
+    toast('Status updated!','ok');
+  }catch(e){toast('Error: '+e.message,'err');}
+}
+
+async function doPhotoUpload(){
+  const lr=$('trans-actions').dataset.lr;
+  const file=$('photo-file').files[0];
+  if(!file){toast('Select a photo','err');return;}
+  try{
+    toast('Compressing…');
+    const blob=await compressImg(file,800,.7);
+    toast('Uploading…');
+    const ref=st.ref(`lr_copies/${lr}.jpg`);
+    await ref.put(blob);
+    const url=await ref.getDownloadURL();
+    await db.collection('lr_master').doc(lr).update({photo_url:url,last_updated:TS()});
+    $('curr-photo').innerHTML=`<a href="${url}" target="_blank"><img src="${url}" style="max-width:100px;border-radius:8px"/></a>`;
+    toast('Photo uploaded!','ok');
+  }catch(e){toast('Error: '+e.message,'err');}
+}
+
+async function doOCR(){
+  btn('btn-ocr',false);
+  toast('Opening camera…');
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+    const video=document.createElement('video');
+    video.srcObject=stream; video.play();
+    await new Promise(r=>video.onloadedmetadata=r);
+    await new Promise(r=>setTimeout(r,1500));
+    const canvas=document.createElement('canvas');
+    canvas.width=video.videoWidth; canvas.height=video.videoHeight;
+    canvas.getContext('2d').drawImage(video,0,0);
+    stream.getTracks().forEach(t=>t.stop());
+    const b64=await new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result.split(',')[1]);canvas.toBlob(b=>fr.readAsDataURL(b),'image/jpeg',.9);});
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:100,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:'image/jpeg',data:b64}},{type:'text',text:'Extract the LR number from this transport document. Return ONLY the number, nothing else. If not found return NOT_FOUND.'}]}]})});
+    const data=await resp.json();
+    const lrNo=data.content?.[0]?.text?.trim();
+    if(lrNo&&lrNo!=='NOT_FOUND'){$('trans-lr').value=lrNo;toast('LR: '+lrNo,'ok');doTransSearch();}
+    else toast('Could not read — type manually','err');
+  }catch(e){toast('Camera error: '+e.message,'err');}
+  btn('btn-ocr',true);
+}
+
+// ── ADMIN ─────────────────────────────────────────────
+function adminTab(t){
+  ['lr','users'].forEach(x=>{
+    $('at-'+x).classList.toggle('on',x===t);
+    $('ap-'+x).style.display=x===t?'':'none';
+  });
+  if(t==='users')loadUsers();
+}
+
+async function doAdminSearch(){
+  const lr=$('admin-lr').value.trim().toUpperCase();
+  if(!lr){toast('Enter LR No','err');return;}
+  $('admin-result').innerHTML=''; $('admin-edit').style.display='none';
+  try{
+    const s=await db.collection('lr_master').doc(lr).get();
+    if(!s.exists){toast('LR not found','err');return;}
+    const d=s.data();
+    const invs=(await db.collection('invoices').where('lr_no','==',lr).get()).docs.map(x=>x.data());
+    $('admin-result').innerHTML=lrCard(lr,d,invs,true);
+    $('edit-lr-id').textContent=lr;
+    $('e-status').value=d.status||'In Transit';
+    $('e-trans').value=d.transporter||'';
+    $('e-veh').value=d.vehicle_no||'';
+    $('e-store').value=d.store||'';
+    $('admin-edit').style.display='';
+    $('admin-edit').dataset.lr=lr;
+  }catch(e){toast('Error: '+e.message,'err');}
+}
+
+async function doSaveEdit(){
+  const lr=$('admin-edit').dataset.lr;
+  try{
+    await db.collection('lr_master').doc(lr).update({status:$('e-status').value,transporter:$('e-trans').value,vehicle_no:$('e-veh').value,store:$('e-store').value,last_updated:TS(),updated_by:CU.username});
+    toast('Saved!','ok'); doAdminSearch();
+  }catch(e){toast('Error: '+e.message,'err');}
+}
+
+async function doDeleteLR(){
+  const lr=$('admin-edit').dataset.lr;
+  if(!confirm(`Delete LR ${lr} and all invoices?`))return;
+  try{
+    const invs=await db.collection('invoices').where('lr_no','==',lr).get();
+    const batch=db.batch();
+    invs.docs.forEach(d=>batch.delete(d.ref));
+    batch.delete(db.collection('lr_master').doc(lr));
+    await batch.commit();
+    $('admin-result').innerHTML=''; $('admin-edit').style.display='none';
+    toast('Deleted','ok');
+  }catch(e){toast('Error: '+e.message,'err');}
+}
+
+async function loadUsers(){
+  $('user-list').innerHTML='<tr><td colspan="5" style="text-align:center;color:#6b7280;padding:16px">Loading…</td></tr>';
+  try{
+    const s=await db.collection('users').get();
+    $('user-list').innerHTML=s.docs.map(d=>{const u={id:d.id,...d.data()};return`<tr><td>${u.id}</td><td><span class="chip chip-${(u.role||'').toLowerCase()}">${u.role}</span></td><td>${u.store||'—'}</td><td>${u.wh||'—'}</td><td><button class="btn btn-red btn-sm" onclick="delUser('${u.id}')">Del</button></td></tr>`;}).join('');
+  }catch(e){toast('Error: '+e.message,'err');}
+}
+
+async function doAddUser(){
+  const username=$('nu').value.trim(),password=$('np').value.trim(),role=$('nr').value,store=$('ns').value.trim(),wh=$('nw').value.trim();
+  if(!username||!password||!role){toast('Fill required fields','err');return;}
+  try{
+    await db.collection('users').doc(username).set({password,role,store:store||null,wh:wh||null,created_by:CU.username,created_time:TS()});
+    toast('User added!','ok');
+    ['nu','np','ns','nw'].forEach(id=>$(id).value=''); $('nr').value='';
+    loadUsers();
+  }catch(e){toast('Error: '+e.message,'err');}
+}
+
+window.delUser=async function(u){
+  if(!confirm(`Delete "${u}"?`))return;
+  try{await db.collection('users').doc(u).delete();toast('Deleted','ok');loadUsers();}
+  catch(e){toast('Error: '+e.message,'err');}
+};
+
+// ── SHARED: LR CARD ───────────────────────────────────
+function lrCard(lr,d,invs,showTime){
+  const colors={'In Transit':'#f59e0b','Reached WH':'#3b82f6','Out for Delivery':'#8b5cf6','Delivered':'#10b981'};
+  const c=colors[d.status]||'#6b7280';
+  const ut=d.upload_time?.toDate?d.upload_time.toDate():null;
+  const locked=ut&&((new Date()-ut)/3600000>4);
+  const invHtml=invs.length?`<div class="tbl-wrap"><table><thead><tr><th>Invoice</th><th>Order</th><th>Store</th><th>Qty</th><th>Value</th><th>Boxes</th></tr></thead><tbody>${invs.map(i=>`<tr><td>${i.invoice_no}</td><td>${i.order_no}</td><td>${i.store}</td><td>${i.invoice_qty}</td><td>₹${Number(i.invoice_value).toLocaleString('en-IN')}</td><td>${i.box_count}</td></tr>`).join('')}</tbody></table></div>`:'<p style="color:#6b7280;font-size:.82rem">No invoices</p>';
+  return`<div class="lr-card"><div class="lr-head"><div><div class="lr-num">LR: ${lr}</div><div class="lr-meta">${d.transporter||''} · ${d.vehicle_no||''}</div></div><span class="badge" style="background:${c}22;color:${c};border:1px solid ${c}44">${d.status||'—'}</span></div><div class="grid2"><div class="kv"><span>Store</span><strong>${d.store||'—'}</strong></div><div class="kv"><span>From</span><strong>${d.from_location||'—'}</strong></div><div class="kv"><span>LR Date</span><strong>${d.lr_date||'—'}</strong></div><div class="kv"><span>Invoices</span><strong>${d.invoice_count||invs.length}</strong></div>${d.photo_url?`<div class="kv"><span>Photo</span><a href="${d.photo_url}" target="_blank" style="color:#6c63ff">View</a></div>`:''} ${showTime&&ut?`<div class="kv"><span>Uploaded</span><strong>${ut.toLocaleString()} ${locked?'🔒':'🔓'}</strong></div>`:''}</div>${invHtml}</div>`;
+}
+
+// ── FILE PARSE ────────────────────────────────────────
+async function parseFile(file){
+  return new Promise((res,rej)=>{
+    const reader=new FileReader();
+    reader.onload=e=>{
+      try{
+        if(file.name.endsWith('.csv')){res(parseCSV(e.target.result));return;}
+        const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
+        const json=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:''});
+        res(json.map(row=>{
+          const r={};Object.keys(row).forEach(k=>{r[k.trim().replace(/\s+/g,' ').toUpperCase()]=row[k];});
+          return{LR_No:r['LR -NO']||r['LR NO'],Invoice_No:r['INVOICE NO'],Order_No:r['ORDER NO.']||r['ORDER NO'],Store:r['LOCATION'],Transporter:r['TRANSPORTER NAME'],Vehicle_No:r['VEHICLE NO'],LR_Date:r['LR DATE'],Transfer_Location:r['TRANSFER LOCATION']||r['TRANSFER LOATION'],Invoice_Qty:r['INVOICE QTY'],Invoice_Value:r['INV VALUE'],Box_Count:r['NO OF BOX']};
+        }));
+      }catch(err){rej(err);}
+    };
+    file.name.endsWith('.csv')?reader.readAsText(file):reader.readAsArrayBuffer(file);
+  });
+}
+
+function parseCSV(text){
+  const lines=text.split('\n').filter(l=>l.trim());
+  const h=lines[0].split(',').map(x=>x.trim().replace(/"/g,'').toUpperCase());
+  return lines.slice(1).map(line=>{
+    const v=line.split(',').map(x=>x.trim().replace(/"/g,''));
+    const r={};h.forEach((k,i)=>r[k]=v[i]||'');
+    return{LR_No:r['LR -NO']||r['LR NO'],Invoice_No:r['INVOICE NO'],Order_No:r['ORDER NO.']||r['ORDER NO'],Store:r['LOCATION'],Transporter:r['TRANSPORTER NAME'],Vehicle_No:r['VEHICLE NO'],LR_Date:r['LR DATE'],Transfer_Location:r['TRANSFER LOCATION']||r['TRANSFER LOATION'],Invoice_Qty:r['INVOICE QTY'],Invoice_Value:r['INV VALUE'],Box_Count:r['NO OF BOX']};
+  });
+}
+
+// ── IMAGE COMPRESS ────────────────────────────────────
+function compressImg(file,maxW,q){
+  return new Promise((res,rej)=>{
+    const img=new Image(),url=URL.createObjectURL(file);
+    img.onload=()=>{
+      let w=img.width,h=img.height;
+      if(w>maxW){h=Math.round(h*maxW/w);w=maxW;}
+      const c=document.createElement('canvas');c.width=w;c.height=h;
+      c.getContext('2d').drawImage(img,0,0,w,h);
+      c.toBlob(b=>{URL.revokeObjectURL(url);res(b);},'image/jpeg',q);
+    };
+    img.onerror=rej; img.src=url;
+  });
+}
+
+// ── CSV DOWNLOAD ──────────────────────────────────────
+function csvDl(rows,name){
+  if(!rows.length){toast('No data','err');return;}
+  const h=Object.keys(rows[0]);
+  const csv=[h.join(','),...rows.map(r=>h.map(k=>JSON.stringify(r[k]??'')).join(','))].join('\n');
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download=name;a.click();
+}
+
+function dlFormat(){
+  const h=['ORDER NO.','INVOICE NO','INV DATE','TRANSFER LOCATION','LOCATION','TRANSPORTER NAME','LR -NO','LR DATE','VEHICLE NO','INVOICE QTY','INV VALUE','NO OF BOX'];
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(h.join(',')+'\n');a.download='TMS_Format.csv';a.click();
+}
+
+// ── ENTER KEY ─────────────────────────────────────────
+document.addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+
+// ── SHOW LOGIN ────────────────────────────────────────
+showPage('pg-login');
+</script>
 </body>
 </html>

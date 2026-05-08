@@ -39,8 +39,8 @@ let currentUser = null; // { username, role, store, wh }
 // UTILS
 // =====================================================
 function $(id){ return document.getElementById(id); }
-function show(id){ $(id).style.display=''; }
-function hide(id){ $(id).style.display='none'; }
+function show(id){ const e=$(id); if(e) e.style.display = id==='page-login'?'flex':''; }
+function hide(id){ const e=$(id); if(e) e.style.display='none'; }
 function showOnly(id){
   ['page-login','page-wh','page-store','page-transporter','page-admin'].forEach(p=>hide(p));
   show(id);
@@ -1005,7 +1005,7 @@ input:focus, select:focus { border-color:var(--accent); }
 <body>
 
 <!-- ===================== LOGIN ===================== -->
-<div id="page-login" class="login-wrap">
+<div id="page-login" class="login-wrap" style="display:flex">
   <div class="login-card">
     <div class="login-logo">TMS</div>
     <div class="login-tagline">Transport Management System</div>

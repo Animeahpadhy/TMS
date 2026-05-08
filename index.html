@@ -183,20 +183,60 @@ td{padding:8px 10px;border-top:1px solid #2e3248}
     </div>
   </div>
   <div id="ap-users" style="display:none">
-    <div class="box"><div class="box-title">Add User</div>
-      <div class="field"><label>Username *</label><input id="nu" placeholder="e.g. wh_mumbai"/></div>
-      <div class="field"><label>Password *</label><input id="np" placeholder="Set password"/></div>
-      <div class="field"><label>Role *</label>
-        <select id="nr"><option value="">Select…</option><option value="WH">WH</option><option value="Store">Store</option><option value="Transporter">Transporter</option><option value="Admin">Admin</option></select>
+
+    <!-- USER SUB TABS -->
+    <div class="tabs" style="margin-top:0">
+      <button class="tab" id="ut-single" onclick="userTab('single')">➕ Add Single</button>
+      <button class="tab" id="ut-bulk" onclick="userTab('bulk')">📋 Bulk Upload</button>
+      <button class="tab" id="ut-list" onclick="userTab('list')">👥 All Users</button>
+    </div>
+
+    <!-- SINGLE USER -->
+    <div id="up-single">
+      <div class="box"><div class="box-title">Add Single User</div>
+        <div class="field"><label>Username *</label><input id="nu" placeholder="e.g. store_mumbai"/></div>
+        <div class="field"><label>Password *</label><input id="np" placeholder="Set password"/></div>
+        <div class="field"><label>Role *</label>
+          <select id="nr"><option value="">Select…</option><option value="WH">WH</option><option value="Store">Store</option><option value="Transporter">Transporter</option><option value="Admin">Admin</option></select>
+        </div>
+        <div class="field"><label>Store Name (for Store role)</label><input id="ns" placeholder="e.g. PHOENIX KURLA"/></div>
+        <div class="field"><label>WH Name (for WH role)</label><input id="nw" placeholder="e.g. WH_MUMBAI"/></div>
+        <button class="btn btn-purple" onclick="doAddUser()">Add User</button>
       </div>
-      <div class="field"><label>Store (if Store role)</label><input id="ns" placeholder="e.g. STORE_DELHI"/></div>
-      <div class="field"><label>WH Name (if WH role)</label><input id="nw" placeholder="e.g. WH_MUMBAI"/></div>
-      <button class="btn btn-purple" onclick="doAddUser()">Add User</button>
     </div>
-    <div class="box"><div class="box-title">All Users</div>
-      <div style="overflow-x:auto"><table class="utbl"><thead><tr><th>Username</th><th>Role</th><th>Store</th><th>WH</th><th></th></tr></thead>
-      <tbody id="user-list"><tr><td colspan="5" style="text-align:center;color:#6b7280;padding:16px">Loading…</td></tr></tbody></table></div>
+
+    <!-- BULK UPLOAD -->
+    <div id="up-bulk" style="display:none">
+      <div class="box"><div class="box-title">Bulk User Upload</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <span style="font-size:.8rem;color:#6b7280">Upload CSV with all users at once (up to 500)</span>
+          <button class="btn btn-teal btn-sm" onclick="dlUserFormat()">⬇ Download Format</button>
+        </div>
+        <div style="background:#22263a;border-radius:8px;padding:12px;margin-bottom:12px;font-size:.78rem;color:#6b7280;font-family:monospace">
+          username, password, role, store, wh<br>
+          store_mumbai, Pass@123, Store, PHOENIX MUMBAI,<br>
+          store_delhi, Pass@123, Store, AMBIENCE MALL,<br>
+          bluedart_del, Trans@123, Transporter,,<br>
+          wh_chennai, WH@123, WH,, WH_CHENNAI
+        </div>
+        <div class="drop"><input type="file" id="bulk-file" accept=".csv"/><div class="drop-icon">📋</div><div class="drop-text">Click to select CSV file</div></div>
+        <button class="btn btn-green" id="btn-bulk" style="margin-top:10px" onclick="doBulkUpload()">Upload All Users</button>
+        <div class="log" id="bulk-log"></div>
+      </div>
     </div>
+
+    <!-- ALL USERS LIST -->
+    <div id="up-list" style="display:none">
+      <div class="box" style="padding:0">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid #2e3248">
+          <span class="box-title" style="margin:0">All Users</span>
+          <button class="btn btn-teal btn-sm" onclick="loadUsers()">↻ Refresh</button>
+        </div>
+        <div style="overflow-x:auto"><table class="utbl"><thead><tr><th>Username</th><th>Role</th><th>Store</th><th>WH</th><th></th></tr></thead>
+        <tbody id="user-list"><tr><td colspan="5" style="text-align:center;color:#6b7280;padding:16px">Click Refresh to load</td></tr></tbody></table></div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -423,7 +463,7 @@ function adminTab(t){
     $('at-'+x).classList.toggle('on',x===t);
     $('ap-'+x).style.display=x===t?'':'none';
   });
-  if(t==='users')loadUsers();
+  if(t==='users')userTab('single');
 }
 
 async function doAdminSearch(){
@@ -485,6 +525,78 @@ async function doAddUser(){
     ['nu','np','ns','nw'].forEach(id=>$(id).value=''); $('nr').value='';
     loadUsers();
   }catch(e){toast('Error: '+e.message,'err');}
+}
+
+// ── USER TAB SWITCHER ────────────────────────────────
+function userTab(t){
+  ['single','bulk','list'].forEach(x=>{
+    $('ut-'+x).classList.toggle('on',x===t);
+    $('up-'+x).style.display=x===t?'':'none';
+  });
+  if(t==='list') loadUsers();
+}
+
+// ── BULK USER UPLOAD ──────────────────────────────────
+function dlUserFormat(){
+  const csv='username,password,role,store,wh\nstore_mumbai,Pass@123,Store,PHOENIX MUMBAI,\nstore_delhi,Pass@123,Store,AMBIENCE MALL,\nbluedart_del,Trans@123,Transporter,,\nwh_chennai,WH@123,WH,,WH_CHENNAI\n';
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='TMS_Users_Format.csv'; a.click();
+}
+
+async function doBulkUpload(){
+  const file=$('bulk-file').files[0];
+  if(!file){toast('Select a CSV file','err');return;}
+  const log=$('bulk-log'); log.style.display='block'; log.innerHTML='';
+  const addLog=msg=>{ log.innerHTML+=`<div>${msg}</div>`; log.scrollTop=log.scrollHeight; };
+
+  const btn=$('btn-bulk'); btn.disabled=true; btn.style.opacity='.5';
+
+  try{
+    const text=await file.text();
+    const lines=text.split('\n').map(l=>l.trim()).filter(l=>l);
+    const headers=lines[0].split(',').map(h=>h.trim().toLowerCase());
+    const rows=lines.slice(1).map(line=>{
+      const vals=line.split(',').map(v=>v.trim().replace(/"/g,''));
+      const r={};
+      headers.forEach((h,i)=>r[h]=vals[i]||'');
+      return r;
+    }).filter(r=>r.username&&r.password&&r.role);
+
+    addLog(`📋 Found ${rows.length} users to create`);
+
+    const validRoles=['WH','Store','Transporter','Admin'];
+    let success=0, failed=0;
+
+    for(const row of rows){
+      if(!validRoles.includes(row.role)){
+        addLog(`⚠ Skipped ${row.username} — invalid role: ${row.role}`);
+        failed++; continue;
+      }
+      try{
+        await db.collection('users').doc(row.username).set({
+          password: row.password,
+          role: row.role,
+          store: row.store||null,
+          wh: row.wh||null,
+          created_by: CU.username,
+          created_time: TS()
+        });
+        addLog(`✅ ${row.username} (${row.role}) created`);
+        success++;
+      }catch(e){
+        addLog(`❌ ${row.username} failed: ${e.message}`);
+        failed++;
+      }
+    }
+
+    addLog(`\n🎉 Done! Created: ${success} | Failed: ${failed}`);
+    toast(`${success} users created!`,'ok');
+  }catch(e){
+    addLog('❌ Error: '+e.message);
+    toast('Upload failed','err');
+  }
+  btn.disabled=false; btn.style.opacity='1';
 }
 
 window.delUser=async function(u){

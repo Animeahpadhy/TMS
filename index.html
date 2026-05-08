@@ -721,9 +721,18 @@ window.adminTab=adminTab; window.adminSearch=adminSearch; window.adminSaveEdit=a
 window.addUser=addUser; window.loadUserList=loadUserList;
 window.downloadFormat=downloadFormat;
 
+// Force show login on page load
+window.onload = function(){
+  document.getElementById('page-login').style.display='flex';
+  document.getElementById('page-wh').style.display='none';
+  document.getElementById('page-store').style.display='none';
+  document.getElementById('page-transporter').style.display='none';
+  document.getElementById('page-admin').style.display='none';
+};
+
 // Enter key support
-document.addEventListener('keydown', e=>{
-  if(e.key==='Enter' && $('page-login').style.display!=='none') login();
+document.addEventListener('keydown', function(e){
+  if(e.key==='Enter') login();
 });
 
 </script>

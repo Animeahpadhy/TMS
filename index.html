@@ -12,10 +12,8 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
 <script>
 // ---- shim so rest of code works unchanged ----
-const serverTimestamp = firebase.firestore.FieldValue.serverTimestamp;
-
 // =====================================================
-// 🔥 PASTE YOUR FIREBASE CONFIG HERE
+// 🔥 FIREBASE CONFIG
 // =====================================================
 const firebaseConfig = {
   apiKey: "AIzaSyAPu5_BwUEu_xXdpXkmOJbuErGCGYqBUeE",
@@ -29,6 +27,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db      = firebase.firestore();
 const storage = firebase.storage();
+const serverTimestamp = () => firebase.firestore.FieldValue.serverTimestamp();
 
 // =====================================================
 // GLOBAL STATE
@@ -1012,6 +1011,16 @@ input:focus, select:focus { border-color:var(--accent); }
 </style>
 </head>
 <body>
+
+<!-- ERROR DISPLAY (catches JS crashes) -->
+<div id="js-error" style="display:none;position:fixed;top:0;left:0;right:0;background:#ef4444;color:white;padding:12px;font-family:monospace;font-size:13px;z-index:99999"></div>
+<script>
+window.onerror = function(msg, src, line, col, err){
+  var d = document.getElementById('js-error');
+  d.style.display='block';
+  d.textContent = '❌ JS Error: ' + msg + ' (line ' + line + ')';
+};
+</script>
 
 <!-- ===================== LOGIN ===================== -->
 <div id="page-login" class="login-wrap" style="display:flex">

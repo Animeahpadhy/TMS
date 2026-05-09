@@ -14,7 +14,6 @@ body{font-family:system-ui,sans-serif;background:#0f1117;color:#e8eaf6;min-heigh
 .box-title{font-size:.7rem;color:#6b7280;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;font-weight:700}
 .topbar{background:#1a1d27;border-bottom:1px solid #2e3248;padding:12px 20px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:200}
 .brand{font-weight:800;color:#6c63ff;font-size:1.1rem}
-.role-tag{font-size:.7rem;color:#6b7280}
 .tabs{display:flex;gap:4px;background:#22263a;border-radius:10px;padding:4px;margin:12px 0}
 .tab{flex:1;padding:8px 4px;text-align:center;border:none;background:transparent;color:#6b7280;font-size:.8rem;font-weight:700;cursor:pointer;border-radius:7px}
 .tab.on{background:#6c63ff;color:#fff}
@@ -28,12 +27,7 @@ input,select{width:100%;background:#22263a;border:1px solid #2e3248;color:#e8eaf
 .btn-green{background:#10b981;color:#fff}
 .btn-gray{background:#22263a;color:#e8eaf6;border:1px solid #2e3248}
 .srow{display:flex;gap:8px}.srow input{flex:1}
-.stats-bar{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
-.stat-chip{background:#1a1d27;border:1px solid #2e3248;border-radius:10px;padding:10px;flex:1;text-align:center}
-.stat-num{font-size:1.3rem;font-weight:800;font-family:monospace}
-.stat-lbl{font-size:.65rem;color:#6b7280;text-transform:uppercase}
 .lr-card{background:#1a1d27;border:1px solid #2e3248;border-radius:12px;padding:16px;margin-top:10px}
-.lr-head{display:flex;justify-content:space-between;margin-bottom:10px}
 .lr-num{font-size:1.1rem;font-weight:800;color:#00d4aa;font-family:monospace}
 .badge{font-size:.65rem;font-weight:800;padding:4px 10px;border-radius:20px}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
@@ -41,7 +35,7 @@ input,select{width:100%;background:#22263a;border:1px solid #2e3248;color:#e8eaf
 .kv strong{font-size:.85rem}
 .tbl-wrap{overflow-x:auto;border-radius:8px;border:1px solid #2e3248;margin-top:10px}
 table{width:100%;border-collapse:collapse;font-size:.75rem}
-th{background:#22263a;padding:8px;text-align:left;color:#6b7280;text-transform:uppercase}
+th{background:#22263a;padding:8px;text-align:left;color:#6b7280}
 td{padding:8px;border-top:1px solid #2e3248;white-space:nowrap}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(30px);background:#1a1d27;border:1px solid #2e3248;color:#e8eaf6;padding:10px 20px;border-radius:8px;font-size:.8rem;opacity:0;transition:0.3s;z-index:9999}
 .toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
@@ -57,86 +51,55 @@ td{padding:8px;border-top:1px solid #2e3248;white-space:nowrap}
 <div id="pg-login" class="center">
   <div class="card">
     <div style="font-size:2rem;font-weight:900;color:#6c63ff;margin-bottom:4px">TMS</div>
-    <div style="color:#6b7280;font-size:.8rem;margin-bottom:24px">Logistics Management</div>
-    <div class="field"><label>Username</label><input id="inp-u" placeholder="Enter username"/></div>
-    <div class="field"><label>Password</label><input id="inp-p" type="password" placeholder="Enter password"/></div>
+    <div style="color:#6b7280;font-size:.8rem;margin-bottom:24px">Supply Chain Tracker</div>
+    <div class="field"><label>Username</label><input id="inp-u" placeholder="Username"/></div>
+    <div class="field"><label>Password</label><input id="inp-p" type="password" placeholder="Password"/></div>
     <button class="btn btn-purple btn-full" id="btn-login" onclick="doLogin()">Login</button>
-    <div id="login-err" style="margin-top:10px;font-size:.8rem;color:#ef4444;text-align:center"></div>
   </div>
 </div>
 
-<!-- WH PANEL -->
-<div id="pg-wh" class="page">
-  <div class="topbar"><div><div class="brand">TMS</div><div class="role-tag" id="wh-tag"></div></div><button class="logout" onclick="doLogout()">Logout</button></div>
-  <div class="tabs">
-    <button class="tab on" id="wt-up" onclick="whTab('up')">📤 Upload</button>
-    <button class="tab" id="wt-sr" onclick="whTab('sr')">🔍 Search</button>
-  </div>
-  <div id="wp-up">
-    <div id="wh-stats" class="stats-bar"></div>
-    <div class="box">
-      <div class="box-title">Upload LR Master</div>
-      <input type="file" id="wh-file" accept=".xlsx,.csv" style="margin-bottom:10px"/>
-      <button class="btn btn-green btn-full" id="btn-wh-up" onclick="doWHUpload()">Process Upload</button>
-      <div class="log" id="wh-log"></div>
-    </div>
-  </div>
-  <div id="wp-sr" style="display:none">
-    <div class="box"><div class="srow"><input id="wh-lr" placeholder="LR Number"/><button class="btn btn-gray" onclick="doWHSearch()">Search</button></div></div>
-    <div id="wh-result"></div>
-  </div>
-</div>
-
-<!-- STORE PANEL -->
-<div id="pg-store" class="page">
-  <div class="topbar"><div><div class="brand">TMS</div><div class="role-tag" id="store-tag"></div></div><button class="logout" onclick="doLogout()">Logout</button></div>
-  <div class="box"><div class="srow"><input id="store-lr" placeholder="Track LR"/><button class="btn btn-gray" onclick="doStoreSearch()">Track</button></div></div>
-  <div id="store-result"></div>
-</div>
-
-<!-- TRANSPORTER PANEL -->
-<div id="pg-trans" class="page">
-  <div class="topbar"><div><div class="brand">TMS</div><div class="role-tag" id="trans-tag"></div></div><button class="logout" onclick="doLogout()">Logout</button></div>
+<!-- MAIN PAGE -->
+<div id="pg-main" class="page">
+  <div class="topbar"><div><div class="brand">TMS</div><div class="role-tag" id="user-tag"></div></div><button class="logout" onclick="doLogout()">Logout</button></div>
+  
   <div class="box">
-    <div class="box-title">Find Shipment</div>
-    <div class="srow"><input id="trans-lr" placeholder="LR Number"/><button class="btn btn-gray" onclick="doTransSearch()">Search</button></div>
+    <div class="box-title">Search Shipment</div>
+    <div class="srow"><input id="srch-lr" placeholder="LR Number"/><button class="btn btn-gray" onclick="doSearch()">Search</button></div>
   </div>
 
-  <div id="trans-result"></div>
+  <div id="res-area"></div>
 
-  <div id="trans-actions" style="display:none" class="box">
-    <div class="box-title">Update Status & Scan Copy</div>
-    <div class="field">
-      <label>Current Status</label>
-      <select id="trans-status-select" onchange="toggleDeliveryUI()">
-        <option value="In Transit">In Transit</option>
-        <option value="Reached WH">Reached WH</option>
-        <option value="Out for Delivery">Out for Delivery</option>
-        <option value="Delivered">Delivered (Scan LR Copy)</option>
-      </select>
-    </div>
+  <!-- TRANSPORTER UPDATE BOX -->
+  <div id="trans-box" style="display:none" class="box">
+    <div class="box-title">Status Update</div>
+    <select id="status-sel" onchange="checkDelivered()" style="margin-bottom:12px">
+      <option value="In Transit">In Transit</option>
+      <option value="Reached WH">Reached WH</option>
+      <option value="Out for Delivery">Out for Delivery</option>
+      <option value="Delivered">Delivered (Scan LR Copy)</option>
+    </select>
     
-    <div id="delivery-ui" style="display:none; border-top:1px solid #2e3248; padding-top:12px; margin-top:12px">
-      <div style="display:flex; gap:8px; margin-bottom:12px">
-        <button class="btn btn-gray" style="flex:1" onclick="triggerCamera()">📷 Take Photo</button>
-        <button class="btn btn-gray" style="flex:1" onclick="triggerGallery()">🖼 Gallery</button>
+    <div id="photo-ui" style="display:none">
+      <div style="display:flex; gap:8px; margin-bottom:10px">
+        <button class="btn btn-gray" style="flex:1" onclick="$('cam').click()">📷 Take Photo</button>
+        <button class="btn btn-gray" style="flex:1" onclick="$('gal').click()">🖼 Gallery</button>
       </div>
-      <div id="photo-preview-box" style="display:none; text-align:center; margin-bottom:12px">
-        <img id="trans-preview-img" style="max-width:100%; border-radius:8px; border:1px solid #10b981"/>
-        <div id="photo-info" style="font-size:.7rem; color:#10b981; margin-top:4px; font-weight:bold"></div>
+      <div id="prev-box" style="display:none; text-align:center; margin-bottom:10px">
+        <img id="prev-img" style="max-width:100%; border-radius:8px; border:1px solid #10b981"/>
+        <div id="img-size" style="font-size:.7rem; color:#10b981; margin-top:4px"></div>
       </div>
-      <input type="file" id="hidden-cam" accept="image/*" capture="environment" style="display:none" onchange="handleFile(this)"/>
-      <input type="file" id="hidden-gal" accept="image/*" style="display:none" onchange="handleFile(this)"/>
     </div>
 
-    <button class="btn btn-green btn-full" id="btn-unified-up" onclick="doUnifiedUpdate()">Update Status</button>
+    <button class="btn btn-green btn-full" id="up-btn" onclick="doUnifiedUpdate()">Confirm Update</button>
   </div>
 </div>
+
+<input type="file" id="cam" accept="image/*" capture="environment" style="display:none" onchange="handleImg(this)"/>
+<input type="file" id="gal" accept="image/*" style="display:none" onchange="handleImg(this)"/>
 
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <script>
 firebase.initializeApp({
@@ -149,131 +112,114 @@ firebase.initializeApp({
 });
 const db=firebase.firestore(), ST=firebase.storage(), TS=()=>firebase.firestore.FieldValue.serverTimestamp();
 const $=id=>document.getElementById(id);
-let CU=null, pendingBlob=null;
+let CU=null, pBlob=null;
 
-function toast(msg,type=''){
-  const t=$('toast'); t.textContent=msg; t.className='toast on '+(type==='ok'?'ok':type==='err'?'err':'');
-  setTimeout(()=>t.classList.remove('on'),3000);
-}
-
-function showPage(id){
-  ['pg-login','pg-wh','pg-store','pg-trans'].forEach(p=>$(p).style.display=p===id?(p==='pg-login'?'flex':'block'):'none');
+function toast(m,t=''){
+  const el=$('toast'); el.textContent=m; el.className=`toast on ${t==='ok'?'ok':t==='err'?'err':''}`;
+  setTimeout(()=>el.classList.remove('on'),3000);
 }
 
 async function doLogin(){
   const u=$('inp-u').value.trim(), p=$('inp-p').value.trim();
-  if(!u||!p)return toast('Enter credentials','err');
   const snap=await db.collection('users').doc(u).get();
-  if(!snap.exists||snap.data().password!==p)return toast('Invalid login','err');
-  CU={username:u,...snap.data()}; goRole();
+  if(snap.exists && snap.data().password===p){
+    CU={id:u,...snap.data()}; $('user-tag').textContent=CU.id;
+    $('pg-login').style.display='none'; $('pg-main').style.display='block';
+  } else toast('Invalid Login','err');
 }
 
-function doLogout(){ CU=null; $('inp-u').value=''; $('inp-p').value=''; showPage('pg-login'); }
+function doLogout(){ location.reload(); }
 
-function goRole(){
-  const r=CU.role;
-  if(r==='WH'){ showPage('pg-wh'); $('wh-tag').textContent=`WH · ${CU.username}`; }
-  else if(r==='Store'){ showPage('pg-store'); $('store-tag').textContent=`Store · ${CU.store_code}`; }
-  else if(r==='Transporter'){ showPage('pg-trans'); $('trans-tag').textContent=`Transporter · ${CU.username}`; }
-}
-
-// TRANSPORTER LOGIC
-function toggleDeliveryUI(){
-  $('delivery-ui').style.display=$('trans-status-select').value==='Delivered'?'block':'none';
-}
-function triggerCamera(){ $('hidden-cam').click(); }
-function triggerGallery(){ $('hidden-gal').click(); }
-
-async function handleFile(input){
-  const file=input.files[0]; if(!file)return;
-  toast("Processing image...");
-  pendingBlob = await compressImg(file, 800, 0.6);
-  $('trans-preview-img').src = URL.createObjectURL(pendingBlob);
-  $('photo-preview-box').style.display = 'block';
-  $('photo-info').textContent = `Optimized: ${Math.round(pendingBlob.size/1024)}KB`;
-}
-
-async function doTransSearch(){
-  const lr=$('trans-lr').value.trim().toUpperCase();
-  if(!lr)return toast("Enter LR No","err");
+async function doSearch(){
+  const lr=$('srch-lr').value.trim().toUpperCase();
+  if(!lr)return;
   const s=await db.collection('lr_master').doc(lr).get();
-  if(!s.exists)return toast("LR Not Found","err");
+  if(!s.exists)return toast('Not Found','err');
   const d=s.data();
   const invs=await db.collection('invoices').where('lr_no','==',lr).get();
-  $('trans-result').innerHTML=lrCard(lr,d,invs.docs.map(x=>x.data()));
-  $('trans-actions').style.display='block';
-  $('trans-actions').dataset.lr=lr;
-  $('trans-status-select').value=d.status||'In Transit';
-  toggleDeliveryUI();
-}
-
-async function doUnifiedUpdate(){
-  const lr=$('trans-actions').dataset.lr;
-  const status=$('trans-status-select').value;
-  const btn=$('btn-unified-up');
   
-  if(status==='Delivered' && !pendingBlob) return toast("Scan required","err");
-
-  btn.disabled = true;
-  btn.textContent = "Updating...";
-
-  try {
-    let upData = { status, last_updated:TS(), updated_by:CU.username };
-    
-    if(pendingBlob){
-      const ref=ST.ref(`lr_copies/${lr}_${Date.now()}.jpg`);
-      const uploadTask = await ref.put(pendingBlob);
-      upData.photo_url = await uploadTask.ref.getDownloadURL();
-    }
-
-    await db.collection('lr_master').doc(lr).update(upData);
-    toast("Success","ok");
-    
-    // Clear form and refresh
-    pendingBlob = null;
-    $('photo-preview-box').style.display = 'none';
-    await doTransSearch();
-  } catch(e) {
-    toast("Failed: "+e.message,"err");
-  } finally {
-    btn.disabled = false;
-    btn.textContent = "Update Status";
+  $('res-area').innerHTML=renderLR(lr,d,invs.docs.map(x=>x.data()));
+  if(CU.role==='Transporter'){
+    $('trans-box').style.display='block';
+    $('trans-box').dataset.lr=lr;
+    $('status-sel').value=d.status||'In Transit';
+    checkDelivered();
   }
 }
 
-function lrCard(lr,d,invs){
+function checkDelivered(){
+  $('photo-ui').style.display=$('status-sel').value==='Delivered'?'block':'none';
+}
+
+async function handleImg(inp){
+  const f=inp.files[0]; if(!f)return;
+  toast('Processing...');
+  pBlob=await compress(f);
+  $('prev-img').src=URL.createObjectURL(pBlob);
+  $('prev-box').style.display='block';
+  $('img-size').textContent=`Optimized: ${Math.round(pBlob.size/1024)}KB`;
+}
+
+// FAST UNIFIED UPDATE
+async function doUnifiedUpdate(){
+  const lr=$('trans-box').dataset.lr;
+  const st=$('status-sel').value;
+  const btn=$('up-btn');
+
+  if(st==='Delivered' && !pBlob) return toast('Scan Required','err');
+
+  btn.disabled=true; btn.textContent='Processing...';
+
+  try {
+    let up={ status:st, last_updated:TS(), updated_by:CU.id };
+    
+    // Parallel Image Upload if blob exists
+    if(pBlob){
+      const ref=ST.ref(`lr_copies/${lr}_${Date.now()}.jpg`);
+      const task = await ref.put(pBlob);
+      up.photo_url = await task.ref.getDownloadURL();
+    }
+
+    // Direct Firestore Update
+    await db.collection('lr_master').doc(lr).update(up);
+    
+    toast('Updated Successfully','ok');
+    pBlob=null; $('prev-box').style.display='none';
+    doSearch(); // Refresh UI
+  } catch(e) {
+    console.error(e);
+    toast('Error: Check connection','err');
+  } finally {
+    btn.disabled=false;
+    btn.textContent='Confirm Update';
+  }
+}
+
+function renderLR(lr,d,invs){
   const c=d.status==='Delivered'?'#10b981':'#f59e0b';
   return `<div class="lr-card">
-    <div class="lr-head">
-      <div class="lr-num">${lr}</div>
-      <span class="badge" style="background:${c}22;color:${c}">${d.status}</span>
-    </div>
-    <div class="grid2">
-      <div class="kv"><span>Store</span><strong>${d.to_code}</strong></div>
-      <div class="kv"><span>Transporter</span><strong>${d.transporter||'—'}</strong></div>
-    </div>
-    ${d.photo_url ? `<div style="margin-top:10px"><img src="${d.photo_url}" style="width:100%;border-radius:8px;border:1px solid #2e3248"/></div>`:''}
-    <div class="tbl-wrap">
-      <table><thead><tr><th>Invoice</th><th>Qty</th></tr></thead>
-      <tbody>${invs.map(i=>`<tr><td>${i.invoice_no}</td><td>${i.invoice_qty}</td></tr>`).join('')}</tbody></table>
-    </div>
+    <div class="lr-head"><div class="lr-num">${lr}</div><span class="badge" style="background:${c}22;color:${c}">${d.status}</span></div>
+    <div class="grid2"><div class="kv"><span>Store</span><strong>${d.to_code}</strong></div><div class="kv"><span>LR Date</span><strong>${d.lr_date||'—'}</strong></div></div>
+    ${d.photo_url?`<div style="margin-top:10px"><img src="${d.photo_url}" style="width:100%;border-radius:8px"/></div>`:''}
+    <div class="tbl-wrap"><table><thead><tr><th>Invoice</th><th>Qty</th></tr></thead><tbody>
+    ${invs.map(i=>`<tr><td>${i.invoice_no}</td><td>${i.invoice_qty}</td></tr>`).join('')}</tbody></table></div>
   </div>`;
 }
 
-function compressImg(file,maxW,q){
+function compress(f){
   return new Promise(res=>{
-    const img=new Image(); img.src=URL.createObjectURL(file);
-    img.onload=()=>{
-      let w=img.width, h=img.height; if(w>maxW){ h=Math.round(h*maxW/w); w=maxW; }
-      const c=document.createElement('canvas'); c.width=w; c.height=h;
-      c.getContext('2d').drawImage(img,0,0,w,h);
-      c.toBlob(b=>res(b),'image/jpeg',q);
+    const reader=new FileReader(); reader.readAsDataURL(f);
+    reader.onload=e=>{
+      const i=new Image(); i.src=e.target.result;
+      i.onload=()=>{
+        const c=document.createElement('canvas');
+        const w=800, scale=w/i.width; c.width=w; c.height=i.height*scale;
+        c.getContext('2d').drawImage(i,0,0,c.width,c.height);
+        c.toBlob(b=>res(b),'image/jpeg',0.6);
+      }
     }
   });
 }
-
-function whTab(t){ $('wp-up').style.display=t==='up'?'block':'none'; $('wp-sr').style.display=t==='sr'?'block':'none'; }
-showPage('pg-login');
 </script>
 </body>
 </html>

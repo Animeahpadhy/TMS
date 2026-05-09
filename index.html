@@ -493,7 +493,7 @@ async function doLogin(){
     const d=snap.data();
     if(d.blocked===true||d.blocked==='true'){$('login-err').textContent='Account suspended. Contact Admin.';$('btn-login').disabled=false;return;}
     if(d.password!==pwd){$('login-err').textContent='Wrong password';$('btn-login').disabled=false;return;}
-    CU={username:user,role:d.role,store_code:d.store_code||null,wh_code:d.wh_code||null,is_super:d.is_super===true||d.is_super==='true'};
+    CU={username:user,role:d.role,store_code:d.store_code||null,wh_code:d.wh_code||null,is_super:d.is_super===true||d.is_super==='true'||d.is_super===1||d.is_super==='1'||String(d.is_super).toLowerCase()==='true'};
     await loadMasters();
     goRole();
   }catch(e){$('login-err').textContent='Error: '+e.message;}
@@ -523,7 +523,14 @@ function goRole(){
   } else if(r==='Admin'||r==='SuperAdmin'){
     showPage('pg-admin');
     $('admin-tag').textContent=(CU.is_super?'⭐ Super Admin':'Admin')+' · '+CU.username;
-    if(CU.is_super)$('btn-superdelete').style.display='';
+    if(CU.is_super){
+      $('btn-superdelete').style.display='';
+      // Show danger zone immediately
+      setTimeout(()=>{
+        const dz=$('super-danger-zone');
+        if(dz)dz.style.display='';
+      },100);
+    }
     adminTab('lr');loadAdminStats();
   }
 }
@@ -898,7 +905,7 @@ function adminTab(t){
   ['lr','up','master','users'].forEach(x=>{$('at-'+x).classList.toggle('on',x===t);$('ap-'+x).style.display=x===t?'':'none';});
   if(t==='users')userTab('single');
   if(t==='master')masterTab('store');
-  if(t==='up'&&CU.is_super&&$('super-danger-zone'))$('super-danger-zone').style.display='';
+  if(t==='up'){setTimeout(()=>{const dz=$('super-danger-zone');if(dz&&CU.is_super)dz.style.display='';},50);}
 }
 
 async function loadAdminStats(){

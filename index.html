@@ -680,8 +680,11 @@ async function doWHSearch(){
   try{
     const s=await db.collection('lr_master').doc(lr).get();
     if(!s.exists){toast('LR not found','err');$('wh-result').innerHTML='';return;}
-    const invs=(await db.collection('invoices').where('lr_no','==',lr).get()).docs.map(d=>d.data());
-    $('wh-result').innerHTML=lrCard(lr,s.data(),invs,true,false);
+    const d=s.data();
+    const invs=(await db.collection('invoices').where('lr_no','==',lr).get()).docs.map(x=>x.data());
+    $('wh-result').innerHTML=lrCard(lr,d,invs,true,false);
+    // Scroll to result
+    setTimeout(()=>$('wh-result').scrollIntoView({behavior:'smooth',block:'start'}),100);
   }catch(e){toast('Error: '+e.message,'err');}
 }
 
@@ -773,9 +776,17 @@ async function doTransSearch(){
     $('trans-status').value=d.status||'In Transit';
     $('trans-actions').style.display='';
     $('trans-actions').dataset.lr=lr;
-    $('curr-photo').innerHTML=d.photo_url?
-      `<img src="${d.photo_url}" class="photo-thumb"/><br><a href="${d.photo_url}" target="_blank" style="color:#00d4aa;font-size:.78rem">View full size</a>`:
-      '<span style="color:#6b7280;font-size:.78rem">No photo uploaded yet</span>';
+    // Show existing photo if available
+    if(d.photo_url){
+      $('curr-photo').innerHTML=`
+        <div style="margin-bottom:6px;font-size:.75rem;color:#10b981;font-weight:700">✅ LR Copy uploaded</div>
+        <a href="${d.photo_url}" target="_blank">
+          <img src="${d.photo_url}" style="max-width:100%;max-height:220px;border-radius:8px;border:1px solid #2e3248;display:block"/>
+        </a>
+        <div style="margin-top:4px;font-size:.72rem;color:#6b7280">Tap photo to view full size · Upload new below to replace</div>`;
+    } else {
+      $('curr-photo').innerHTML='<span style="color:#6b7280;font-size:.78rem">No photo uploaded yet</span>';
+    }
   }catch(e){toast('Error: '+e.message,'err');}
 }
 

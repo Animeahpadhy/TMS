@@ -478,9 +478,9 @@ async function doLogin(){
     const snap=await db.collection('users').doc(user).get();
     if(!snap.exists){$('login-err').textContent='User not found';$('btn-login').disabled=false;return;}
     const d=snap.data();
-    if(d.blocked){$('login-err').textContent='Account suspended. Contact Admin.';$('btn-login').disabled=false;return;}
+    if(d.blocked===true||d.blocked==='true'){$('login-err').textContent='Account suspended. Contact Admin.';$('btn-login').disabled=false;return;}
     if(d.password!==pwd){$('login-err').textContent='Wrong password';$('btn-login').disabled=false;return;}
-    CU={username:user,role:d.role,store_code:d.store_code||null,wh_code:d.wh_code||null,is_super:d.is_super||false};
+    CU={username:user,role:d.role,store_code:d.store_code||null,wh_code:d.wh_code||null,is_super:d.is_super===true||d.is_super==='true'};
     await loadMasters();
     goRole();
   }catch(e){$('login-err').textContent='Error: '+e.message;}

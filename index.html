@@ -9,7 +9,7 @@
 body{font-family:system-ui,sans-serif;background:#0f1117;color:#e8eaf6;min-height:100vh;font-size:14px}
 .center{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
 .card{background:#1a1d27;border:1px solid #2e3248;border-radius:16px;padding:28px;width:100%;max-width:400px}
-.page{display:none;max-width:900px;margin:0 auto;padding:16px 16px 100px}
+.page{display:none;max-width:950px;margin:0 auto;padding:16px 16px 100px}
 .box{background:#1a1d27;border:1px solid #2e3248;border-radius:12px;padding:16px;margin-bottom:14px}
 .box-title{font-size:.7rem;color:#6b7280;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;font-weight:700}
 .topbar{background:#1a1d27;border-bottom:1px solid #2e3248;padding:12px 20px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:200}
@@ -27,6 +27,7 @@ input,select,textarea{width:100%;background:#22263a;border:1px solid #2e3248;col
 .btn-purple{background:#6c63ff;color:#fff}
 .btn-red{background:#ef4444;color:#fff}
 .btn-gray{background:#22263a;color:#e8eaf6;border:1px solid #2e3248}
+.btn-teal{background:transparent;color:#00d4aa;border:1px solid #00d4aa}
 .srow{display:flex;gap:8px}.srow input{flex:1}
 .lr-card{background:#1a1d27;border:1px solid #2e3248;border-radius:12px;padding:20px;margin-top:10px}
 .lr-layout{display:flex;gap:20px;justify-content:space-between;align-items:flex-start}
@@ -39,12 +40,14 @@ input,select,textarea{width:100%;background:#22263a;border:1px solid #2e3248;col
 #zoom-img{max-width:100%;max-height:95vh;border-radius:8px}
 .tbl-wrap{overflow-x:auto;border-radius:10px;border:1px solid #2e3248;margin-top:15px}
 table{width:100%;border-collapse:collapse;font-size:.8rem}
-th{background:#22263a;padding:10px;text-align:left;color:#6b7280;text-transform:uppercase}
+th{background:#22263a;padding:10px;text-align:left;color:#6b7280;text-transform:uppercase;font-size:.65rem}
 td{padding:10px;border-top:1px solid #2e3248;white-space:nowrap}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(30px);background:#1a1d27;border:1px solid #2e3248;color:#e8eaf6;padding:10px 20px;border-radius:8px;font-size:.8rem;opacity:0;transition:0.3s;z-index:9999;text-align:center}
 .toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
 .logout{background:none;border:none;color:#6b7280;cursor:pointer}
-.drop{border:2px dashed #2e3248;border-radius:10px;padding:30px;text-align:center;cursor:pointer;position:relative}
+.chip{padding:2px 8px;border-radius:5px;font-size:10px;font-weight:bold;text-transform:uppercase}
+.chip-admin{background:#6c63ff22;color:#6c63ff}
+.chip-store{background:#3b82f622;color:#3b82f6}
 .log{background:#0d1117;border:1px solid #2e3248;border-radius:8px;padding:10px;font-family:monospace;font-size:.7rem;max-height:150px;overflow-y:auto;color:#00d4aa;margin-top:10px;display:none}
 </style>
 </head>
@@ -52,11 +55,11 @@ td{padding:10px;border-top:1px solid #2e3248;white-space:nowrap}
 <div id="toast" class="toast"></div>
 <div id="zoom-overlay" onclick="this.style.display='none'"><img id="zoom-img" src=""></div>
 
-<!-- LOGIN PAGE -->
+<!-- LOGIN -->
 <div id="pg-login" class="center">
   <div class="card">
     <div style="font-size:2.5rem;font-weight:900;color:#6c63ff;margin-bottom:4px">TMS</div>
-    <div style="color:#6b7280;font-size:.85rem;margin-bottom:24px">Supply Chain Guardian</div>
+    <div style="color:#6b7280;font-size:.85rem;margin-bottom:24px">Logistics Hub Control</div>
     <div class="field"><label>Username</label><input id="inp-u" placeholder="Enter username"/></div>
     <div class="field"><label>Password</label><input id="inp-p" type="password" placeholder="Enter password"/></div>
     <button class="btn btn-purple btn-full" onclick="doLogin()">Secure Login</button>
@@ -67,7 +70,6 @@ td{padding:10px;border-top:1px solid #2e3248;white-space:nowrap}
 <div id="pg-main" class="page">
   <div class="topbar"><div><div class="brand">TMS</div><div class="role-tag" id="user-tag"></div></div><button class="logout" onclick="doLogout()">Logout</button></div>
   
-  <!-- SUPER ADMIN SECURITY TOOLS -->
   <div id="super-admin-tools" style="display:none">
     <div class="box" style="border-color:#ef444466">
       <div class="box-title" style="color:#ef4444">⚠️ MASTER CONTROL & AUDIT LOG</div>
@@ -75,22 +77,20 @@ td{padding:10px;border-top:1px solid #2e3248;white-space:nowrap}
         <button class="btn btn-red" style="flex:1" onclick="nuke('lr_master')">Wipe LRs</button>
         <button class="btn btn-red" style="flex:1" onclick="nuke('invoices')">Wipe Invoices</button>
       </div>
-      <button class="btn btn-gray btn-full" onclick="loadAuditLogs()">🔍 Audit Activity History (Anti-Mischief)</button>
+      <button class="btn btn-gray btn-full" onclick="loadAuditLogs()">🔍 Audit Activity History</button>
     </div>
     <div id="audit-log-area" style="display:none" class="box">
         <div id="log-list" style="font-size: 0.75rem; color:#6b7280; max-height:150px; overflow-y:auto"></div>
     </div>
   </div>
 
-  <!-- NAVIGATION TABS -->
   <div id="nav-tabs" class="tabs">
-    <button class="tab on" id="tab-lr" onclick="showTab('lr')">🔍 LR Search</button>
+    <button class="tab on" id="tab-lr" onclick="showTab('lr')">🔍 Search</button>
     <button class="tab" id="tab-up" onclick="showTab('up')">📤 Upload</button>
     <button class="tab" id="tab-ms" onclick="showTab('ms')">📋 Masters</button>
     <button class="tab" id="tab-us" onclick="showTab('us')">👥 Users</button>
   </div>
 
-  <!-- SECTION: LR SEARCH -->
   <div id="sec-lr">
     <div class="box">
       <div class="box-title">Search Shipment</div>
@@ -103,7 +103,7 @@ td{padding:10px;border-top:1px solid #2e3248;white-space:nowrap}
         <option value="In Transit">In Transit</option>
         <option value="Reached WH">Reached WH</option>
         <option value="Out for Delivery">Out for Delivery</option>
-        <option value="Delivered">Delivered (Proof Required)</option>
+        <option value="Delivered">Delivered</option>
       </select>
       <div id="photo-ui" style="display:none">
         <div style="display:flex; gap:8px; margin-bottom:10px">
@@ -112,28 +112,36 @@ td{padding:10px;border-top:1px solid #2e3248;white-space:nowrap}
         </div>
         <div id="prev-box" style="display:none; text-align:center"><img id="prev-img" style="max-width:100%; border-radius:8px; border:1px solid #10b981"/></div>
       </div>
-      <button class="btn btn-green btn-full" id="up-btn" onclick="doUnifiedUpdate()">Update & Log Activity</button>
+      <button class="btn btn-green btn-full" id="up-btn" onclick="doUnifiedUpdate()">Update Record</button>
     </div>
   </div>
 
-  <!-- SECTION: UPLOAD -->
   <div id="sec-up" style="display:none">
     <div class="box">
-      <div class="box-title">Upload Bulk LR Data</div>
-      <div class="drop" onclick="$('xl-file').click()">📁 Click or Drag Excel/CSV<input type="file" id="xl-file" style="display:none" onchange="toast('File Loaded','ok')"/></div>
-      <button class="btn btn-green btn-full" style="margin-top:12px" onclick="toast('Process Started','ok')">Process Dataset</button>
+      <div class="box-title">Upload Master Data</div>
+      <div style="border:2px dashed #2e3248; border-radius:10px; padding:30px; text-align:center; cursor:pointer" onclick="$('xl-file').click()">📁 Select Excel/CSV<input type="file" id="xl-file" style="display:none" onchange="toast('File Ready','ok')"/></div>
+      <button class="btn btn-green btn-full" style="margin-top:12px">Upload Now</button>
     </div>
   </div>
 
-  <!-- SECTION: MASTERS -->
+  <!-- MASTERS SECTION -->
   <div id="sec-ms" style="display:none">
-    <div class="box"><div class="box-title">Store Master</div><button class="btn btn-gray btn-full">View Stores</button></div>
-    <div class="box"><div class="box-title">Distance Matrix</div><button class="btn btn-gray btn-full">View Transit SLAs</button></div>
+    <div class="box">
+        <div class="box-title">Store Master</div>
+        <div id="store-master-view">Loading...</div>
+    </div>
+    <div class="box">
+        <div class="box-title">Distance Matrix</div>
+        <div id="dist-view">Loading...</div>
+    </div>
   </div>
 
-  <!-- SECTION: USERS -->
+  <!-- USERS SECTION -->
   <div id="sec-us" style="display:none">
-    <div class="box"><div class="box-title">User Management</div><div id="user-list"></div><p style="color:#6b7280; font-size:0.8rem">Super Admin can block users here.</p></div>
+    <div class="box">
+        <div class="box-title">System Users</div>
+        <div id="user-view">Loading...</div>
+    </div>
   </div>
 </div>
 
@@ -170,16 +178,56 @@ async function doLogin(){
     const isSuper = (d.is_super === true || String(d.is_super) === 'true');
     $('user-tag').textContent=`${isSuper ? '⭐ Super Admin' : d.role} · ${u}`;
     if(isSuper) $('super-admin-tools').style.display='block';
+    if(isSuper || d.role==='Admin') $('nav-tabs').style.display='flex';
     $('pg-login').style.display='none'; $('pg-main').style.display='block';
   } else toast('Unauthorized Access','err');
 }
 
 function doLogout(){ location.reload(); }
+
 function showTab(t){
   ['lr','up','ms','us'].forEach(x => {
       $(`sec-${x}`).style.display = x===t ? 'block' : 'none';
       $(`tab-${x}`).classList.toggle('on', x===t);
   });
+  if(t==='ms') { loadStoreMaster(); loadDistMatrix(); }
+  if(t==='us') loadUsers();
+}
+
+// RESTORED STORE MASTER VIEW
+async function loadStoreMaster(){
+    const snap = await db.collection('store_master').get();
+    let h = '<div class="tbl-wrap"><table><thead><tr><th>Code</th><th>Name</th><th>City</th></tr></thead><tbody>';
+    snap.forEach(d => { const r = d.data(); h += `<tr><td>${d.id}</td><td>${r.name}</td><td>${r.city}</td></tr>`; });
+    $('store-master-view').innerHTML = h + '</tbody></table></div>';
+}
+
+async function loadDistMatrix(){
+    const snap = await db.collection('distance_matrix').get();
+    let h = '<div class="tbl-wrap"><table><thead><tr><th>WH</th><th>City</th><th>Days</th></tr></thead><tbody>';
+    snap.forEach(d => { const r = d.data(); h += `<tr><td>${r.from_wh}</td><td>${r.to_city}</td><td>${r.transit_days}</td></tr>`; });
+    $('dist-view').innerHTML = h + '</tbody></table></div>';
+}
+
+// RESTORED USER VIEW WITH ADMIN PROTECTION
+async function loadUsers(){
+    const snap = await db.collection('users').get();
+    let h = '<div class="tbl-wrap"><table><thead><tr><th>User</th><th>Role</th><th>Status</th><th>Action</th></tr></thead><tbody>';
+    snap.forEach(d => {
+        const r = d.data();
+        const isProtected = r.role === 'Admin' || r.is_super;
+        const actionBtn = (CU.is_super || !isProtected) ? 
+            `<button class="btn btn-teal btn-sm" onclick="toggleBlock('${d.id}', ${!r.blocked})">${r.blocked ? 'Unblock' : 'Block'}</button>` : '';
+        
+        h += `<tr><td>${d.id}</td><td><span class="chip chip-${r.role.toLowerCase()}">${r.role}</span></td>
+              <td>${r.blocked ? '❌' : '✅'}</td><td>${actionBtn}</td></tr>`;
+    });
+    $('user-view').innerHTML = h + '</tbody></table></div>';
+}
+
+async function toggleBlock(uid, state){
+    await db.collection('users').doc(uid).update({blocked: state});
+    toast('User Status Updated','ok'); loadUsers();
 }
 
 async function doSearch(){
@@ -201,7 +249,7 @@ async function handleImg(inp){ const f=inp.files[0]; if(!f)return; pBlob=await c
 
 async function doUnifiedUpdate(){
   const lr=$('action-box').dataset.lr; const st=$('status-sel').value; const btn=$('up-btn');
-  btn.disabled=true; btn.textContent='Processing...';
+  btn.disabled=true; btn.textContent='Saving...';
   try {
     let upData = { status:st, last_updated:TS(), updated_by:CU.id };
     if(pBlob){
@@ -209,18 +257,9 @@ async function doUnifiedUpdate(){
       const snap = await ref.put(pBlob); upData.photo_url = await snap.ref.getDownloadURL();
     }
     await db.collection('lr_master').doc(lr).update(upData);
-    await db.collection('audit_logs').add({ lr_no:lr, status_to:st, user:CU.id, timestamp:TS() });
-    toast('Success & Logged','ok'); pBlob=null; $('prev-box').style.display='none'; doSearch();
-  } catch(e) { toast('Error during update','err'); }
-  finally { btn.disabled=false; btn.textContent='Update & Log Activity'; }
-}
-
-async function loadAuditLogs(){
-    $('audit-log-area').style.display = 'block';
-    const snap = await db.collection('audit_logs').orderBy('timestamp','desc').limit(20).get();
-    let html = '';
-    snap.forEach(d => { const l = d.data(); html += `<div style="padding:5px 0; border-bottom:1px solid #2e3248">@${l.user} moved ${l.lr_no} to <b>${l.status_to}</b></div>`; });
-    $('log-list').innerHTML = html || 'No logs yet';
+    toast('Updated!','ok'); pBlob=null; $('prev-box').style.display='none'; doSearch();
+  } catch(e) { toast('Error','err'); }
+  finally { btn.disabled=false; btn.textContent='Update Record'; }
 }
 
 async function nuke(col){
@@ -236,7 +275,7 @@ function renderLR(lr,d,invs){
     <div style="display:flex; justify-content:space-between; margin-bottom:10px"><div class="lr-num">LR: ${lr}</div><span class="badge" style="background:${c}22;color:${c}">${d.status}</span></div>
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:0.85rem"><div><span style="color:#6b7280">Store</span><br><strong>${d.to_code}</strong></div><div><span style="color:#6b7280">Date</span><br><strong>${d.lr_date||'—'}</strong></div></div></div>
     <div class="lr-preview-aside">${d.photo_url ? `<div class="lr-thumb-wrapper" onclick="zoomImg('${d.photo_url}')"><img class="lr-thumb" src="${d.photo_url}"><div style="font-size:9px;text-align:center;background:#6c63ff;color:white">ZOOM 🔍</div></div>` : '<div style="font-size:10px;color:#6b7280;padding:15px;border:1px dashed #2e3248;border-radius:8px">No Proof</div>'}</div></div>
-    <div class="tbl-wrap"><table><thead><tr><th>Invoice</th><th>Qty</th><th>Logs</th></tr></thead><tbody>${invs.map(i=>`<tr><td>${i.invoice_no}</td><td>${i.invoice_qty}</td><td>${d.updated_by || 'Initial'}</td></tr>`).join('')}</tbody></table></div></div>`;
+    <div class="tbl-wrap"><table><thead><tr><th>Invoice</th><th>Qty</th></tr></thead><tbody>${invs.map(i=>`<tr><td>${i.invoice_no}</td><td>${i.invoice_qty}</td></tr>`).join('')}</tbody></table></div></div>`;
 }
 
 function compress(f){

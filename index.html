@@ -261,6 +261,19 @@ tr:hover td{background:#1e2235}
 
   <!-- ADMIN UPLOAD -->
   <div id="ap-up" style="display:none">
+    <!-- SUPER ADMIN DANGER ZONE -->
+    <div id="super-danger-zone" style="display:none">
+      <div class="box" style="border-color:#ef444466;background:#ef44440a">
+        <div class="box-title" style="color:#ef4444">⚠ SUPER ADMIN — DANGER ZONE</div>
+        <p style="font-size:.82rem;color:#6b7280;margin-bottom:14px">This will permanently delete ALL LR records and ALL invoice records from the database. This cannot be undone. Use only before a fresh reupload.</p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-red" onclick="doDeleteAllLR()">🗑 Delete ALL LR Data</button>
+          <button class="btn btn-red" onclick="doDeleteAllInvoices()">🗑 Delete ALL Invoices</button>
+          <button class="btn btn-red btn-full" style="background:#7f1d1d" onclick="doNukeAll()">💣 DELETE EVERYTHING (LR + Invoices)</button>
+        </div>
+        <div class="log" id="nuke-log"></div>
+      </div>
+    </div>
     <div class="box">
       <div class="box-title">Upload Large LR Dataset (No 4hr restriction)</div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
@@ -885,6 +898,7 @@ function adminTab(t){
   ['lr','up','master','users'].forEach(x=>{$('at-'+x).classList.toggle('on',x===t);$('ap-'+x).style.display=x===t?'':'none';});
   if(t==='users')userTab('single');
   if(t==='master')masterTab('store');
+  if(t==='up'&&CU.is_super&&$('super-danger-zone'))$('super-danger-zone').style.display='';
 }
 
 async function loadAdminStats(){
@@ -1388,6 +1402,90 @@ function compressImg(file,maxW,q){
     };
     img.onerror=rej;img.src=url;
   });
+}
+
+// ══════════════════════════════════════════
+// SUPER ADMIN — DELETE ALL DATA
+// ══════════════════════════════════════════
+async function doDeleteAllLR(){
+  if(!CU.is_super){toast('Super Admin only','err');return;}
+  const count = prompt('Type DELETE to confirm removing ALL LR records:');
+  if(count!=='DELETE'){toast('Cancelled','warn');return;}
+  clearLog('nuke-log');addLog('nuke-log','🗑 Deleting all LR records…');
+  try{
+    let total=0,batch=db.batch(),batchCount=0;
+    const snap=await db.collection('lr_master').get();
+    for(const d of snap.docs){
+      batch.delete(d.ref);batchCount++;total++;
+      if(batchCount>=400){await batch.commit();batch=db.batch();batchCount=0;addLog('nuke-log',`Deleted ${total} so far…`);}
+    }
+    if(batchCount>0)await batch.commit();
+    addLog('nuke-log',`✅ Deleted ${total} LR records`);
+    toast(`${total} LRs deleted`,'ok');
+    loadAdminStats();
+  }catch(e){addLog('nuke-log','❌ '+e.message);toast('Error','err');}
+}
+
+async function doDeleteAllInvoices(){
+  if(!CU.is_super){toast('Super Admin only','err');return;}
+  const count = prompt('Type DELETE to confirm removing ALL Invoice records:');
+  if(count!=='DELETE'){toast('Cancelled','warn');return;}
+  clearLog('nuke-log');addLog('nuke-log','🗑 Deleting all invoice records…');
+  try{
+    let total=0,batch=db.batch(),batchCount=0;
+    const snap=await db.collection('invoices').get();
+    for(const d of snap.docs){
+      batch.delete(d.ref);batchCount++;total++;
+      if(batchCount>=400){await batch.commit();batch=db.batch();batchCount=0;addLog('nuke-log',`Deleted ${total} so far…`);}
+    }
+    if(batchCount>0)await batch.commit();
+    addLog('nuke-log',`✅ Deleted ${total} invoice records`);
+    toast(`${total} invoices deleted`,'ok');
+  }catch(e){addLog('nuke-log','❌ '+e.message);toast('Error','err');}
+}
+
+async function doNukeAll(){
+  if(!CU.is_super){toast('Super Admin only','err');return;}
+  const confirm1=prompt('⚠ This will delete ALL LR + ALL Invoice data permanently!\n\nType NUKE to confirm:');
+  if(confirm1!=='NUKE'){toast('Cancelled','warn');return;}
+  const confirm2=prompt('Are you absolutely sure? Type your username ('+CU.username+') to proceed:');
+  if(confirm2!==CU.username){toast('Cancelled — username did not match','warn');return;}
+  
+  clearLog('nuke-log');addLog('nuke-log','💣 Starting full database wipe…');
+  
+  try{
+    // Delete LR master
+    addLog('nuke-log','🗑 Deleting LR records…');
+    let lrTotal=0,batch=db.batch(),batchCount=0;
+    const lrSnap=await db.collection('lr_master').get();
+    for(const d of lrSnap.docs){
+      batch.delete(d.ref);batchCount++;lrTotal++;
+      if(batchCount>=400){await batch.commit();batch=db.batch();batchCount=0;}
+    }
+    if(batchCount>0)await batch.commit();
+    addLog('nuke-log',`✅ Deleted ${lrTotal} LR records`);
+
+    // Delete invoices
+    addLog('nuke-log','🗑 Deleting invoice records…');
+    let invTotal=0;batch=db.batch();batchCount=0;
+    const invSnap=await db.collection('invoices').get();
+    for(const d of invSnap.docs){
+      batch.delete(d.ref);batchCount++;invTotal++;
+      if(batchCount>=400){await batch.commit();batch=db.batch();batchCount=0;}
+    }
+    if(batchCount>0)await batch.commit();
+    addLog('nuke-log',`✅ Deleted ${invTotal} invoice records`);
+
+    addLog('nuke-log','');
+    addLog('nuke-log','🎉 Done! Database cleared. Ready for fresh upload.');
+    addLog('nuke-log','👆 Use the Upload section above to reload your data.');
+    toast('All data deleted! Ready for fresh upload.','ok');
+    loadAdminStats();
+  }catch(e){
+    addLog('nuke-log','❌ Error: '+e.message);
+    addLog('nuke-log','⚠ Some records may not have been deleted. Try again.');
+    toast('Error during delete','err');
+  }
 }
 
 // ══════════════════════════════════════════

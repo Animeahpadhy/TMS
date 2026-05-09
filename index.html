@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>TMS — Enterprise Logistics Hub</title>
+<title>TMS — Logistics Control Center</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:system-ui,sans-serif;background:#0f1117;color:#e8eaf6;min-height:100vh;font-size:14px}
 .center{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
 .card{background:#1a1d27;border:1px solid #2e3248;border-radius:16px;padding:28px;width:100%;max-width:400px}
-.page{display:none;max-width:950px;margin:0 auto;padding:16px 16px 100px}
+.page{display:none;max-width:1100px;margin:0 auto;padding:16px 16px 100px}
 .box{background:#1a1d27;border:1px solid #2e3248;border-radius:12px;padding:16px;margin-bottom:14px}
 .box-title{font-size:.72rem;color:#6b7280;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;font-weight:700}
 .topbar{background:#1a1d27;border-bottom:1px solid #2e3248;padding:12px 20px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:200}
@@ -17,46 +17,51 @@ body{font-family:system-ui,sans-serif;background:#0f1117;color:#e8eaf6;min-heigh
 .tabs{display:flex;gap:4px;background:#22263a;border-radius:10px;padding:4px;margin:14px 0}
 .tab{flex:1;padding:8px 4px;text-align:center;border:none;background:transparent;color:#6b7280;font-size:.8rem;font-weight:700;cursor:pointer;border-radius:7px}
 .tab.on{background:#6c63ff;color:#fff}
-.field{margin-bottom:12px}
-.field label{display:block;font-size:.72rem;color:#6b7280;margin-bottom:5px;text-transform:uppercase;font-weight:600}
 input,select{width:100%;background:#22263a;border:1px solid #2e3248;color:#e8eaf6;border-radius:8px;padding:10px;font-size:.9rem;outline:none}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 18px;border:none;border-radius:8px;font-size:.88rem;font-weight:700;cursor:pointer}
-.btn-full{width:100%}.btn-sm{padding:5px 12px;font-size:.76rem}
-.btn-purple{background:#6c63ff;color:#fff}.btn-green{background:#10b981;color:#fff}
-.btn-gray{background:#22263a;color:#e8eaf6;border:1px solid #2e3248}.btn-red{background:#ef4444;color:#fff}
-.btn-teal{background:transparent;color:#00d4aa;border:1px solid #00d4aa}
+.btn-full{width:100%}.btn-green{background:#10b981;color:#fff}.btn-purple{background:#6c63ff;color:#fff}.btn-red{background:#ef4444;color:#fff}.btn-gray{background:#22263a;color:#e8eaf6;border:1px solid #2e3248}.btn-teal{background:transparent;color:#00d4aa;border:1px solid #00d4aa}
 .srow{display:flex;gap:8px}.srow input{flex:1}
-.lr-card{background:#1a1d27;border:1px solid #2e3248;border-radius:12px;padding:20px;margin-top:10px}
-.lr-layout{display:flex;gap:20px;justify-content:space-between;align-items:flex-start}
-.lr-num{font-size:1.2rem;font-weight:800;color:#00d4aa;font-family:monospace}
-.badge{font-size:.7rem;font-weight:800;padding:4px 10px;border-radius:20px}
-.lr-preview-aside{width:160px;text-align:right}
-.lr-thumb-wrapper{position:relative;display:inline-block;border-radius:8px;overflow:hidden;border:2px solid #2e3248;cursor:zoom-in}
-.lr-thumb{width:100%;height:110px;object-fit:cover;display:block}
-#zoom-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.95);z-index:2000;align-items:center;justify-content:center;padding:10px;cursor:zoom-out}
-#zoom-img{max-width:100%;max-height:95vh;border-radius:8px}
-.tbl-wrap{overflow-x:auto;border-radius:10px;border:1px solid #2e3248;margin-top:15px}
-table{width:100%;border-collapse:collapse;font-size:.8rem}
-th{background:#22263a;padding:10px;text-align:left;color:#6b7280;text-transform:uppercase}
-td{padding:10px;border-top:1px solid #2e3248;white-space:nowrap}
-.drop{border:2px dashed #2e3248;border-radius:10px;padding:30px;text-align:center;cursor:pointer;position:relative}
+
+/* TWO-COLUMN LAYOUT FOR PINNED LR DETAILS */
+.main-layout{display:flex; gap:20px; align-items:flex-start}
+.content-area{flex:1}
+.sidebar-right{width:320px; position:sticky; top:80px}
+
+/* LR CARD ENHANCEMENTS */
+.lr-card{background:#1a1d27;border:1px solid #2e3248;border-radius:12px;padding:15px;margin-top:10px}
+.lr-num{font-size:1.1rem;font-weight:800;color:#00d4aa;font-family:monospace}
+.badge{font-size:.65rem;font-weight:800;padding:4px 10px;border-radius:20px;text-transform:uppercase}
+.error-banner{background:#ef444415; border:1px solid #ef444444; color:#ef4444; padding:10px; border-radius:8px; font-size:12px; margin-bottom:10px; font-weight:bold}
+.lock-banner{background:#f59e0b15; border:1px solid #f59e0b44; color:#f59e0b; padding:10px; border-radius:8px; font-size:12px; text-align:center; margin-bottom:10px}
+
+.lr-thumb-wrapper{border-radius:8px;overflow:hidden;border:2px solid #2e3248;cursor:zoom-in;margin-top:10px}
+.lr-thumb{width:100%;height:120px;object-fit:cover;display:block}
+#zoom-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.95);z-index:2000;align-items:center;justify-content:center;cursor:zoom-out}
+#zoom-img{max-width:95%;max-height:95vh;border-radius:8px}
+
+.tbl-wrap{overflow-x:auto;border-radius:8px;border:1px solid #2e3248;margin-top:10px}
+table{width:100%;border-collapse:collapse;font-size:.75rem}
+th{background:#22263a;padding:8px;text-align:left;color:#6b7280;text-transform:uppercase}
+td{padding:8px;border-top:1px solid #2e3248;white-space:nowrap}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(30px);background:#1a1d27;border:1px solid #2e3248;color:#e8eaf6;padding:10px 20px;border-radius:8px;font-size:.83rem;opacity:0;transition:.3s;z-index:9999;text-align:center}
 .toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
 .logout{background:none;border:none;color:#6b7280;cursor:pointer}
+
+@media(max-width:800px){.to-row{flex-direction:column}.sidebar-right{width:100%;position:static}}
 </style>
 </head>
 <body>
 <div id="toast" class="toast"></div>
 <div id="zoom-overlay" onclick="this.style.display='none'"><img id="zoom-img" src=""></div>
 
-<!-- LOGIN PAGE -->
+<!-- LOGIN -->
 <div id="pg-login" class="center">
   <div class="card">
     <div style="font-size:2.5rem;font-weight:900;color:#6c63ff;margin-bottom:4px">TMS</div>
-    <div style="color:#6b7280;font-size:.85rem;margin-bottom:24px">Enterprise Logistics Hub</div>
-    <div class="field"><label>Username</label><input id="inp-u" placeholder="Enter username"/></div>
-    <div class="field"><label>Password</label><input id="inp-p" type="password" placeholder="Enter password"/></div>
-    <button class="btn btn-purple btn-full" onclick="doLogin()">Login</button>
+    <div style="color:#6b7280;font-size:.85rem;margin-bottom:24px">Logistics Hub Control</div>
+    <div class="field" style="margin-bottom:12px"><label style="font-size:10px;color:#6b7280">Username</label><input id="inp-u" placeholder="Enter username"/></div>
+    <div class="field" style="margin-bottom:12px"><label style="font-size:10px;color:#6b7280">Password</label><input id="inp-p" type="password" placeholder="Enter password"/></div>
+    <button class="btn btn-purple btn-full" onclick="doLogin()">Secure Login</button>
   </div>
 </div>
 
@@ -64,10 +69,10 @@ td{padding:10px;border-top:1px solid #2e3248;white-space:nowrap}
 <div id="pg-main" class="page">
   <div class="topbar"><div><div class="brand">TMS</div><div class="role-tag" id="user-tag"></div></div><button class="logout" onclick="doLogout()">Logout</button></div>
   
-  <div id="super-tools" style="display:none" class="box overdue-red">
-    <div class="box-title" style="color:#ef4444">⚠️ MASTER CONTROL & AUDIT LOG</div>
+  <div id="super-tools" style="display:none" class="box">
+    <div class="box-title" style="color:#ef4444">⚠️ Master Control & Security Logs</div>
     <div style="display:flex; gap:8px; margin-bottom:10px"><button class="btn btn-red btn-full" onclick="nuke('lr_master')">Wipe LRs</button><button class="btn btn-red btn-full" onclick="nuke('invoices')">Wipe Invoices</button></div>
-    <button class="btn btn-gray btn-full">🔍 Audit Activity History</button>
+    <div id="log-list" style="font-size:10px; color:#6b7280; max-height:80px; overflow-y:auto; border-top:1px solid #2e3248; padding-top:8px"></div>
   </div>
 
   <div class="tabs">
@@ -77,55 +82,41 @@ td{padding:10px;border-top:1px solid #2e3248;white-space:nowrap}
     <button class="tab" id="t-us" onclick="showTab('us')">👥 Users</button>
   </div>
 
-  <!-- SECTION: SEARCH -->
-  <div id="sec-lr">
-    <div class="box"><div class="box-title">Search LR</div><div class="srow"><input id="srch-lr" placeholder="Enter LR Number"/><button class="btn btn-gray" onclick="doSearch()">Search</button></div></div>
-    <div id="res-area"></div>
-  </div>
+  <div class="main-layout">
+      <!-- LEFT CONTENT -->
+      <div class="content-area">
+          <div id="sec-lr">
+            <div class="box"><div class="box-title">Find Shipment</div><div class="srow"><input id="srch-lr" placeholder="LR Number"/><button class="btn btn-gray" onclick="doSearch()">Search</button></div></div>
+            <div id="res-area"></div>
+            
+            <div id="action-box" style="display:none" class="box">
+                <div id="lock-msg" class="lock-banner" style="display:none">🔒 Record locked. Contact Admin for changes.</div>
+                <div id="update-form">
+                    <div id="error-check" class="error-banner" style="display:none">⚠️ LR data is not correct. Please verify before saving!</div>
+                    <div class="box-title">Operational Update</div>
+                    <select id="status-sel" onchange="checkDelv()" style="margin-bottom:12px"><option value="In Transit">In Transit</option><option value="Reached WH">Reached WH</option><option value="Out for Delivery">Out for Delivery</option><option value="Delivered">Delivered</option></select>
+                    <div id="photo-ui" style="display:none">
+                        <button class="btn btn-gray btn-full" onclick="$('cam').click()" style="margin-bottom:10px">📷 Scan LR Proof</button>
+                        <div id="prev-box" style="display:none; text-align:center"><img id="prev-img" style="max-width:100%; border-radius:8px; border:1px solid #10b981"/></div>
+                    </div>
+                    <button class="btn btn-green btn-full" id="up-btn" onclick="doUnifiedUpdate()">Save & Verify</button>
+                </div>
+            </div>
+          </div>
 
-  <!-- SECTION: UPLOAD -->
-  <div id="sec-up" style="display:none">
-    <div class="box">
-      <div class="box-title">Upload LR Master Data</div>
-      <button class="btn btn-teal btn-sm" style="margin-bottom:12px" onclick="dlFormat('lr')">⬇ Download Upload Format</button>
-      <div class="drop" onclick="$('lr-file').click()">📁 Select Excel/CSV<input type="file" id="lr-file" accept=".xlsx,.csv" style="display:none" onchange="toast('File Loaded','ok')"/></div>
-      <button class="btn btn-green btn-full" style="margin-top:15px">Upload Now</button>
-    </div>
-  </div>
+          <!-- OTHER SECTIONS -->
+          <div id="sec-up" style="display:none"><div class="box"><div class="box-title">Upload LR Master</div><button class="btn btn-teal btn-sm" onclick="dlFormat('lr')">⬇ Download Format</button><input type="file" class="field" style="margin-top:10px"/><button class="btn btn-green btn-full">Process Upload</button></div></div>
+          <div id="sec-ms" style="display:none"><div class="box"><div class="box-title">Masters</div><button class="btn btn-gray btn-full" onclick="loadStoreData()">View Stores</button><div id="store-view" class="tbl-wrap"></div></div></div>
+          <div id="sec-us" style="display:none"><div class="box"><div class="box-title">Users</div><div id="user-view"></div></div></div>
+      </div>
 
-  <!-- SECTION: MASTERS -->
-  <div id="sec-ms" style="display:none">
-    <div class="tabs" style="margin-top:0">
-        <button class="tab on" id="sub-store" onclick="subMaster('store')">🏪 Store Master</button>
-        <button class="tab" id="sub-matrix" onclick="subMaster('matrix')">📏 Distance Matrix</button>
-    </div>
-    
-    <div id="ms-store">
-        <div class="box">
-            <div class="box-title">Store Master Control</div>
-            <button class="btn btn-teal btn-sm" style="margin-bottom:10px" onclick="dlFormat('store')">⬇ Download Format</button>
-            <div class="drop" onclick="$('store-file').click()">📂 Select Store Master File<input type="file" id="store-file" style="display:none" onchange="toast('Ready to Upload','ok')"/></div>
-        </div>
-        <div class="box"><div class="box-title">Configured Stores</div><div id="store-view">Loading...</div></div>
-    </div>
-
-    <div id="ms-matrix" style="display:none">
-        <div class="box">
-            <div class="box-title">Distance Matrix Control</div>
-            <button class="btn btn-teal btn-sm" style="margin-bottom:10px" onclick="dlFormat('dist')">⬇ Download Format</button>
-            <div class="drop" onclick="$('dist-file').click()">📂 Select Transit Matrix File<input type="file" id="dist-file" style="display:none" onchange="toast('Ready to Upload','ok')"/></div>
-        </div>
-        <div class="box"><div class="box-title">Transit SLAs</div><div id="dist-view">Loading...</div></div>
-    </div>
-  </div>
-
-  <!-- SECTION: USERS -->
-  <div id="sec-us" style="display:none">
-    <div class="box">
-        <div class="box-title">User Management</div>
-        <button class="btn btn-teal btn-sm" style="margin-bottom:10px" onclick="dlFormat('us')">⬇ Download User Format</button>
-        <div id="user-view"></div>
-    </div>
+      <!-- RIGHT SIDEBAR (PINNED LR DETAILS) -->
+      <div class="sidebar-right" id="pinned-summary" style="display:none">
+          <div class="box" style="border-color:#6c63ff44">
+              <div class="box-title" style="color:#6c63ff">Shipment Summary</div>
+              <div id="side-content"></div>
+          </div>
+      </div>
   </div>
 </div>
 
@@ -145,7 +136,9 @@ firebase.initializeApp({
     appId:"1:279467148642:web:c458996bca6c85ed33983b"
 });
 const db=firebase.firestore(), ST=firebase.storage(), TS=()=>firebase.firestore.FieldValue.serverTimestamp(), $=id=>document.getElementById(id);
-let CU=null, pBlob=null;
+let CU=null, pBlob=null, userIP="Unknown", STORE_MASTER={};
+
+fetch('https://api.ipify.org?format=json').then(r=>r.json()).then(d=>userIP=d.ip).catch(()=>{});
 
 function toast(m,t=''){ const el=$('toast'); el.textContent=m; el.className=`toast on ${t==='ok'?'ok':t==='err'?'err':''}`; setTimeout(()=>el.classList.remove('on'),3000); }
 
@@ -157,80 +150,108 @@ async function doLogin(){
         const isSuper = (d.is_super === true || String(d.is_super) === 'true');
         $('user-tag').textContent=`${isSuper ? '⭐ Super Admin' : d.role} · ${u}`;
         if(isSuper) $('super-tools').style.display='block';
+        loadMasterRef();
         $('pg-login').style.display='none'; $('pg-main').style.display='block';
-    } else toast('Unauthorized Access','err');
+    } else toast('Unauthorized','err');
 }
 
 function doLogout(){ location.reload(); }
+function showTab(t){ ['lr','up','ms','us'].forEach(x=>{ $(`t-${x}`).classList.toggle('on',x===t); $(`sec-${x}`).style.display=x===t?'block':'none'; }); }
 
-function showTab(t){
-    ['lr','up','ms','us'].forEach(x=>{ $(`t-${x}`).classList.toggle('on',x===t); $(`sec-${x}`).style.display=x===t?'block':'none'; });
-    if(t==='ms') loadMastersData();
-    if(t==='us') loadUsers();
-}
-
-function subMaster(t){
-    ['store','matrix'].forEach(x=>{ $(`sub-${x}`).classList.toggle('on',x===t); $(`ms-${x}`).style.display=x===t?'block':'none'; });
-}
-
-async function loadMastersData(){
-    const sSnap = await db.collection('store_master').get();
-    let sh = '<div class="tbl-wrap"><table><thead><tr><th>Code</th><th>Name</th><th>City</th></tr></thead><tbody>';
-    sSnap.forEach(d=>{ const r=d.data(); sh+=`<tr><td>${d.id}</td><td>${r.name}</td><td>${r.city}</td></tr>`; });
-    $('store-view').innerHTML = sh+'</tbody></table></div>';
-
-    const dSnap = await db.collection('distance_matrix').get();
-    let dh = '<div class="tbl-wrap"><table><thead><tr><th>From</th><th>To</th><th>Days</th></tr></thead><tbody>';
-    dSnap.forEach(d=>{ const r=d.data(); dh+=`<tr><td>${r.from_wh}</td><td>${r.to_city}</td><td>${r.transit_days}</td></tr>`; });
-    $('dist-view').innerHTML = dh+'</tbody></table></div>';
-}
-
-async function loadUsers(){
-    const snap = await db.collection('users').get();
-    let h = '<div class="tbl-wrap"><table><thead><tr><th>User ID</th><th>Password</th><th>Role</th><th>Status</th><th>Action</th></tr></thead><tbody>';
-    snap.forEach(d=>{
-        const r=d.data();
-        const action = (CU.id !== d.id && (CU.is_super || r.role !== 'Admin')) ? 
-            `<button class="btn btn-sm btn-teal" onclick="toggleUser('${d.id}',${!r.blocked})">${r.blocked?'Unblock':'Block'}</button>` : '';
-        h+=`<tr><td>${d.id}</td><td style="font-family:monospace">${r.password}</td><td>${r.role}</td><td>${r.blocked?'Blocked':'Active'}</td><td>${action}</td></tr>`;
-    });
-    $('user-view').innerHTML = h+'</tbody></table></div>';
-}
-
-async function toggleUser(id,s){ await db.collection('users').doc(id).update({blocked:s}); loadUsers(); }
-
-function dlFormat(t){
-    const h = {
-        lr: 'FROM_CODE,TO_CODE,INVOICE NO,ORDER NO.,INV DATE,TRANSPORTER NAME,LR -NO,LR DATE,VEHICLE NO,INVOICE QTY,INV VALUE,NO OF BOX\n',
-        store: 'SAP STORE CODE,NAME,CITY,STATE,TYPE\n',
-        dist: 'FROM_WH,TO_CITY,DISTANCE_KM\n',
-        us: 'username,password,role,store_code,wh_code\n'
-    };
-    const a=document.createElement('a'); a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(h[t]); a.download=`TMS_${t}_Format.csv`; a.click();
+async function loadMasterRef(){
+    const ss=await db.collection('store_master').get();
+    ss.forEach(d=>STORE_MASTER[d.id]=d.data());
 }
 
 async function doSearch(){
     const lr=$('srch-lr').value.trim().toUpperCase(); if(!lr) return;
     const s=await db.collection('lr_master').doc(lr).get();
     if(!s.exists) return toast('LR Not Found','err');
-    const invs=await db.collection('invoices').where('lr_no','==',lr).get();
-    $('res-area').innerHTML=renderLR(lr,s.data(),invs.docs.map(x=>x.data()));
+    const d=s.data(), invs=await db.collection('invoices').where('lr_no','==',lr).get();
+    
+    // RENDER MAIN AREA
+    $('res-area').innerHTML=renderLR(lr,d,invs.docs.map(x=>x.data()));
+    
+    // RENDER PINNED SIDEBAR (TOP RIGHT)
+    $('pinned-summary').style.display = 'block';
+    $('side-content').innerHTML = `
+        <div style="margin-bottom:10px"><span style="font-size:10px; color:#6b7280">LR NUMBER</span><br><strong class="lr-num">${lr}</strong></div>
+        <div style="margin-bottom:10px"><span style="font-size:10px; color:#6b7280">CURRENT STATUS</span><br><span class="badge" style="background:#6c63ff22; color:#6c63ff">${d.status}</span></div>
+        <div style="margin-bottom:10px"><span style="font-size:10px; color:#6b7280">STORE CODE</span><br><strong>${d.to_code}</strong></div>
+        <div><span style="font-size:10px; color:#6b7280">LR DATE</span><br><strong>${d.lr_date || '—'}</strong></div>
+    `;
+
+    // MISTAKE PROTECTION & LOCKING LOGIC
+    // Allow Transporter one edit window or if status is not Delivered
+    const editCount = d.trans_edit_count || 0;
+    const canUpdate = (CU.role==='Admin' || CU.is_super || (CU.role==='Transporter' && (d.status !== 'Delivered' || editCount < 1)));
+    
+    $('action-box').style.display = 'block';
+    $('action-box').dataset.lr = lr;
+    $('status-sel').value = d.status || 'In Transit';
+    
+    if(!canUpdate) {
+        $('update-form').style.display = 'none';
+        $('lock-msg').style.display = 'block';
+    } else {
+        $('update-form').style.display = 'block';
+        $('lock-msg').style.display = 'none';
+        
+        // AUTO CHECK IF DATA IS CORRECT
+        if(d.to_code && !STORE_MASTER[d.to_code]) $('error-check').style.display = 'block';
+        else $('error-check').style.display = 'none';
+        
+        checkDelv();
+    }
 }
 
+function checkDelv(){ $('photo-ui').style.display=$('status-sel').value==='Delivered'?'block':'none'; }
 function zoomImg(url){ $('zoom-img').src=url; $('zoom-overlay').style.display='flex'; }
 async function handleImg(inp){ const f=inp.files[0]; if(!f)return; pBlob=await compress(f); $('prev-img').src=URL.createObjectURL(pBlob); $('prev-box').style.display='block'; }
 
+async function doUnifiedUpdate(){
+    const lr=$('action-box').dataset.lr, st=$('status-sel').value;
+    const btn=$('up-btn'); btn.disabled=true; btn.textContent="Saving...";
+    try {
+        let upData = { status:st, last_updated:TS(), updated_by:CU.id };
+        if(CU.role==='Transporter') upData.trans_edit_count = firebase.firestore.FieldValue.increment(1);
+
+        if(pBlob){ 
+            const ref=ST.ref(`lr_copies/${lr}.jpg`); 
+            const snap=await ref.put(pBlob); 
+            upData.photo_url=await snap.ref.getDownloadURL(); 
+        }
+        await db.collection('lr_master').doc(lr).update(upData);
+        await db.collection('audit_logs').add({
+            lr_no:lr, status_to:st, user:CU.id, timestamp:TS(),
+            ip: userIP, device: navigator.userAgent
+        });
+        toast('Record Updated Successfully','ok'); doSearch();
+    } catch(e){ toast('Error updating record','err'); }
+    finally { btn.disabled=false; btn.textContent="Save & Verify"; }
+}
+
 function renderLR(lr,d,invs){
     const c=d.status==='Delivered'?'#10b981':'#f59e0b';
-    return `<div class="lr-card"><div class="lr-layout"><div class="lr-details">
-    <div style="display:flex; justify-content:space-between; margin-bottom:10px"><div class="lr-num">LR: ${lr}</div><span class="badge" style="background:${c}22;color:${c}">${d.status}</span></div>
-    <div class="grid2"><div><span>Store Code</span><br><strong>${d.to_code}</strong></div><div><span>Date</span><br><strong>${d.lr_date||'—'}</strong></div></div></div>
-    <div class="lr-preview-aside">${d.photo_url ? `<div class="lr-thumb-wrapper" onclick="zoomImg('${d.photo_url}')"><img class="lr-thumb" src="${d.photo_url}"><div style="font-size:9px;text-align:center;background:#6c63ff;color:white;padding:2px">ZOOM 🔍</div></div>` : '<div style="font-size:10px;color:#6b7280;padding:15px;border:1px dashed #2e3248;border-radius:8px">No Proof</div>'}</div></div>
-    <div class="tbl-wrap"><table><thead><tr><th>Invoice</th><th>Qty</th></tr></thead><tbody>${invs.map(i=>`<tr><td>${i.invoice_no}</td><td>${i.invoice_qty}</td></tr>`).join('')}</tbody></table></div></div>`;
+    return `<div class="lr-card">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px">
+        <div><div class="lr-num">LR: ${lr}</div><span class="badge" style="background:${c}22;color:${c}">${d.status}</span></div>
+        <div style="text-align:right"><span style="font-size:10px; color:#6b7280">Updated By</span><br><small>@${d.updated_by || 'System'}</small></div>
+    </div>
+    <div class="lr-layout">
+        <div class="lr-details">
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; font-size:13px">
+                <div><span style="color:#6b7280">Store</span><br><strong>${STORE_MASTER[d.to_code]?.name || d.to_code}</strong></div>
+                <div><span style="color:#6b7280">Transit City</span><br><strong>${STORE_MASTER[d.to_code]?.city || 'Unknown'}</strong></div>
+            </div>
+            <div class="tbl-wrap"><table><thead><tr><th>Invoice</th><th>Qty</th></tr></thead><tbody>${invs.map(i=>`<tr><td>${i.invoice_no}</td><td>${i.invoice_qty}</td></tr>`).join('')}</tbody></table></div>
+        </div>
+        <div class="lr-preview-aside">${d.photo_url ? `<div class="lr-thumb-wrapper" onclick="zoomImg('${d.photo_url}')"><img class="lr-thumb" src="${d.photo_url}"><div style="font-size:9px;text-align:center;background:#6c63ff;color:white;padding:2px">TAP TO ZOOM</div></div>` : '<div style="font-size:10px;color:#6b7280;padding:20px;border:1px dashed #2e3248;border-radius:8px;text-align:center">No Photo Proof</div>'}</div>
+    </div></div>`;
 }
 
 function compress(f){ return new Promise(res=>{ const r=new FileReader(); r.readAsDataURL(f); r.onload=e=>{ const i=new Image(); i.src=e.target.result; i.onload=()=>{ const c=document.createElement('canvas'); const w=800, s=w/i.width; c.width=w; c.height=i.height*s; c.getContext('2d').drawImage(i,0,0,c.width,c.height); c.toBlob(b=>res(b),'image/jpeg',0.5); } } }); }
-async function nuke(col){ if(confirm(`Purge all ${col}?`)){ const s=await db.collection(col).get(); const b=db.batch(); s.forEach(d=>b.delete(d.ref)); await b.commit(); toast('Cleared','ok'); } }
+async function nuke(col){ if(confirm(`Purge all ${col}?`)){ const s=await db.collection(col).get(); const b=db.batch(); s.forEach(d=>b.delete(d.ref)); await b.commit(); toast('Database Purged','ok'); } }
 </script>
 </body>
 </html>

@@ -473,7 +473,12 @@ async function loadMasters(){
   try{
     // Store master
     const ss=await db.collection('store_master').get();
-    ss.docs.forEach(d=>{STORE_MASTER[String(d.id)]={...d.data()};});
+    ss.docs.forEach(d=>{
+      const key=String(d.id).trim();
+      STORE_MASTER[key]={...d.data()};
+      // Also store numeric version if applicable
+      if(!isNaN(key))STORE_MASTER[parseInt(key)]={...d.data()};
+    });
     // Distance matrix
     const ds=await db.collection('distance_matrix').get();
     ds.docs.forEach(d=>{
@@ -841,6 +846,9 @@ async function doPhotoUploadFinal(){
     $('btn-upload-photo').style.display='none';
     pendingPhotoBlob=null;
     toast('Photo uploaded ('+sizeKB+'KB)!','ok');
+    // Refresh LR card to show photo
+    const lr=$('trans-actions').dataset.lr;
+    if(lr)setTimeout(()=>doTransSearch(),1000);
   }catch(e){toast('Upload error: '+e.message,'err');}
   btn.disabled=false;btn.textContent='⬆ Upload This Photo';
 }
@@ -1298,14 +1306,17 @@ function lrCard(lr,d,invs,showTime,showConfirm,totals){
   const c=colors[d.status]||'#6b7280';
   const ut=d.upload_time?.toDate?d.upload_time.toDate():null;
   const locked=ut&&((new Date()-ut)/3600000>4);
-  const storeName=d.store_name||(STORE_MASTER[d.to_code]?.name)||d.to_code||'—';
-  const storeCode=d.to_code||'—';
+  const storeCode=String(d.to_code||'—').trim();
+  const storeLookup=STORE_MASTER[storeCode]||STORE_MASTER[parseInt(storeCode)]||STORE_MASTER[String(parseInt(storeCode))];
+  const storeName=(d.store_name&&d.store_name!==storeCode&&d.store_name.length>4)?d.store_name:(storeLookup?.name)||storeCode;
+  const storeCity=storeLookup?.city||d.store_city||'';
 
   // Overdue info
   const ov=overdueInfo(d.lr_date,d.wh_code||d.from_code,d.to_code);
   let overdueHtml='';
   let cardStyle='';
-  if(ov){
+  const isDelivered=d.status==='Delivered'||d.status==='Store Confirmed';
+  if(ov&&!isDelivered){
     const expStr=ov.expected.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
     if(ov.diffDays>0){
       overdueHtml=`<div style="background:#ef444415;border:1px solid #ef444460;border-radius:8px;padding:8px;margin-bottom:10px;font-size:.78rem;color:#ef4444;font-weight:700">🔴 OVERDUE by ${ov.diffDays} day${ov.diffDays>1?'s':''} | Expected: ${expStr} | Transit SLA: ${ov.transit} days</div>`;

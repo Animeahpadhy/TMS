@@ -51,9 +51,9 @@ td{padding:8px;border-top:1px solid #2e3248;white-space:nowrap}
 <div id="pg-login" class="center">
   <div class="card">
     <div style="font-size:2rem;font-weight:900;color:#6c63ff;margin-bottom:4px">TMS</div>
-    <div style="color:#6b7280;font-size:.8rem;margin-bottom:24px">Supply Chain Tracker</div>
-    <div class="field"><label>Username</label><input id="inp-u" placeholder="Username"/></div>
-    <div class="field"><label>Password</label><input id="inp-p" type="password" placeholder="Password"/></div>
+    <div style="color:#6b7280;font-size:.8rem;margin-bottom:24px">Supply Chain Management</div>
+    <div class="field"><label>Username</label><input id="inp-u" placeholder="Enter username"/></div>
+    <div class="field"><label>Password</label><input id="inp-p" type="password" placeholder="Enter password"/></div>
     <button class="btn btn-purple btn-full" id="btn-login" onclick="doLogin()">Login</button>
   </div>
 </div>
@@ -63,15 +63,15 @@ td{padding:8px;border-top:1px solid #2e3248;white-space:nowrap}
   <div class="topbar"><div><div class="brand">TMS</div><div class="role-tag" id="user-tag"></div></div><button class="logout" onclick="doLogout()">Logout</button></div>
   
   <div class="box">
-    <div class="box-title">Search Shipment</div>
+    <div class="box-title">Find Shipment</div>
     <div class="srow"><input id="srch-lr" placeholder="LR Number"/><button class="btn btn-gray" onclick="doSearch()">Search</button></div>
   </div>
 
   <div id="res-area"></div>
 
-  <!-- TRANSPORTER UPDATE BOX -->
+  <!-- TRANSPORTER UPDATE SECTION -->
   <div id="trans-box" style="display:none" class="box">
-    <div class="box-title">Status Update</div>
+    <div class="box-title">Update Status</div>
     <select id="status-sel" onchange="checkDelivered()" style="margin-bottom:12px">
       <option value="In Transit">In Transit</option>
       <option value="Reached WH">Reached WH</option>
@@ -86,7 +86,7 @@ td{padding:8px;border-top:1px solid #2e3248;white-space:nowrap}
       </div>
       <div id="prev-box" style="display:none; text-align:center; margin-bottom:10px">
         <img id="prev-img" style="max-width:100%; border-radius:8px; border:1px solid #10b981"/>
-        <div id="img-size" style="font-size:.7rem; color:#10b981; margin-top:4px"></div>
+        <div id="img-size" style="font-size:.7rem; color:#10b981; margin-top:4px; font-weight:bold"></div>
       </div>
     </div>
 
@@ -153,43 +153,51 @@ function checkDelivered(){
 
 async function handleImg(inp){
   const f=inp.files[0]; if(!f)return;
-  toast('Processing...');
+  toast('Optimizing image...');
   pBlob=await compress(f);
   $('prev-img').src=URL.createObjectURL(pBlob);
   $('prev-box').style.display='block';
   $('img-size').textContent=`Optimized: ${Math.round(pBlob.size/1024)}KB`;
 }
 
-// FAST UNIFIED UPDATE
+// THE FASTER UNIFIED UPDATE
 async function doUnifiedUpdate(){
   const lr=$('trans-box').dataset.lr;
   const st=$('status-sel').value;
   const btn=$('up-btn');
 
-  if(st==='Delivered' && !pBlob) return toast('Scan Required','err');
+  if(st==='Delivered' && !pBlob) return toast('Scan required for delivery','err');
 
-  btn.disabled=true; btn.textContent='Processing...';
+  btn.disabled=true; 
+  btn.textContent='Updating...';
 
   try {
-    let up={ status:st, last_updated:TS(), updated_by:CU.id };
+    let upData = { status:st, last_updated:TS(), updated_by:CU.id };
     
-    // Parallel Image Upload if blob exists
+    // Perform uploads and database updates in parallel
+    const tasks = [];
+    
     if(pBlob){
       const ref=ST.ref(`lr_copies/${lr}_${Date.now()}.jpg`);
-      const task = await ref.put(pBlob);
-      up.photo_url = await task.ref.getDownloadURL();
+      const uploadTask = ref.put(pBlob).then(async (snap) => {
+          upData.photo_url = await snap.ref.getDownloadURL();
+      });
+      tasks.push(uploadTask);
     }
 
-    // Direct Firestore Update
-    await db.collection('lr_master').doc(lr).update(up);
+    // Wait for the photo to finish uploading (if applicable) then update Firestore
+    await Promise.all(tasks);
+    await db.collection('lr_master').doc(lr).update(upData);
     
-    toast('Updated Successfully','ok');
-    pBlob=null; $('prev-box').style.display='none';
-    doSearch(); // Refresh UI
+    toast('Shipment Updated','ok');
+    pBlob=null; 
+    $('prev-box').style.display='none';
+    await doSearch(); // Refresh the view
   } catch(e) {
     console.error(e);
-    toast('Error: Check connection','err');
+    toast('Update failed. Check connection.','err');
   } finally {
+    // This finally block ensures the button always resets
     btn.disabled=false;
     btn.textContent='Confirm Update';
   }
@@ -200,7 +208,7 @@ function renderLR(lr,d,invs){
   return `<div class="lr-card">
     <div class="lr-head"><div class="lr-num">${lr}</div><span class="badge" style="background:${c}22;color:${c}">${d.status}</span></div>
     <div class="grid2"><div class="kv"><span>Store</span><strong>${d.to_code}</strong></div><div class="kv"><span>LR Date</span><strong>${d.lr_date||'—'}</strong></div></div>
-    ${d.photo_url?`<div style="margin-top:10px"><img src="${d.photo_url}" style="width:100%;border-radius:8px"/></div>`:''}
+    ${d.photo_url?`<div style="margin-top:10px"><img src="${d.photo_url}" style="width:100%;border-radius:8px;border:1px solid #2e3248"/></div>`:''}
     <div class="tbl-wrap"><table><thead><tr><th>Invoice</th><th>Qty</th></tr></thead><tbody>
     ${invs.map(i=>`<tr><td>${i.invoice_no}</td><td>${i.invoice_qty}</td></tr>`).join('')}</tbody></table></div>
   </div>`;

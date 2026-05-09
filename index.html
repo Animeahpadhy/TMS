@@ -9,9 +9,9 @@
 body{font-family:system-ui,sans-serif;background:#0f1117;color:#e8eaf6;min-height:100vh;font-size:14px}
 .center{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
 .card{background:#1a1d27;border:1px solid #2e3248;border-radius:16px;padding:28px;width:100%;max-width:400px}
-.page{display:none;max-width:780px;margin:0 auto;padding:12px 12px 100px}
+.page{display:none;max-width:850px;margin:0 auto;padding:12px 12px 100px}
 .box{background:#1a1d27;border:1px solid #2e3248;border-radius:12px;padding:16px;margin-bottom:14px}
-.box-title{font-size:.7rem;color:#6b7280;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;font-weight:700}
+.box-title{font-size:.7rem;color:#6b7280;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;font-weight:700}
 .topbar{background:#1a1d27;border-bottom:1px solid #2e3248;padding:12px 20px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:200}
 .brand{font-weight:800;color:#6c63ff;font-size:1.1rem}
 .field{margin-bottom:12px}
@@ -24,38 +24,57 @@ input,select{width:100%;background:#22263a;border:1px solid #2e3248;color:#e8eaf
 .btn-purple{background:#6c63ff;color:#fff}
 .btn-gray{background:#22263a;color:#e8eaf6;border:1px solid #2e3248}
 .srow{display:flex;gap:8px}.srow input{flex:1}
-.lr-card{background:#1a1d27;border:1px solid #2e3248;border-radius:12px;padding:16px;margin-top:10px}
-.lr-num{font-size:1.1rem;font-weight:800;color:#00d4aa;font-family:monospace}
+
+/* LR CARD PROFESSIONAL LAYOUT */
+.lr-card{background:#1a1d27;border:1px solid #2e3248;border-radius:12px;padding:20px;margin-top:10px;position:relative}
+.lr-layout{display:flex;gap:20px;justify-content:space-between;align-items:flex-start}
+.lr-details{flex:1}
+.lr-head{display:flex;justify-content:space-between;margin-bottom:12px}
+.lr-num{font-size:1.2rem;font-weight:800;color:#00d4aa;font-family:monospace}
 .badge{font-size:.65rem;font-weight:800;padding:4px 10px;border-radius:20px}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
-.kv span{font-size:.65rem;color:#6b7280;text-transform:uppercase;display:block}
-.kv strong{font-size:.85rem}
-.tbl-wrap{overflow-x:auto;border-radius:8px;border:1px solid #2e3248;margin-top:10px}
-table{width:100%;border-collapse:collapse;font-size:.75rem}
-th{background:#22263a;padding:8px;text-align:left;color:#6b7280}
-td{padding:8px;border-top:1px solid #2e3248;white-space:nowrap}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-bottom:15px}
+.kv span{font-size:.65rem;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:2px}
+.kv strong{font-size:.9rem;color:#e8eaf6}
+
+/* RIGHT HAND SIDE IMAGE PREVIEW */
+.lr-preview-aside{width:160px;text-align:right}
+.lr-thumb-wrapper{position:relative;display:inline-block;border-radius:8px;overflow:hidden;border:2px solid #2e3248;cursor:zoom-in;transition:0.3s}
+.lr-thumb-wrapper:hover{border-color:#6c63ff;transform:translateY(-2px)}
+.lr-thumb{width:100%;height:110px;object-fit:cover;display:block}
+.zoom-hint{position:absolute;bottom:0;left:0;right:0;background:rgba(108,99,255,0.8);color:white;font-size:10px;text-align:center;padding:2px;font-weight:bold}
+
+/* FULL SCREEN ZOOM MODAL */
+#zoom-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.95);z-index:2000;align-items:center;justify-content:center;padding:10px;cursor:zoom-out}
+#zoom-img{max-width:100%;max-height:95vh;border-radius:8px;box-shadow:0 0 40px rgba(0,0,0,0.8)}
+
+.tbl-wrap{overflow-x:auto;border-radius:10px;border:1px solid #2e3248;margin-top:15px}
+table{width:100%;border-collapse:collapse;font-size:.8rem}
+th{background:#22263a;padding:10px;text-align:left;color:#6b7280;text-transform:uppercase;font-size:.65rem}
+td{padding:10px;border-top:1px solid #2e3248;white-space:nowrap}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(30px);background:#1a1d27;border:1px solid #2e3248;color:#e8eaf6;padding:10px 20px;border-radius:8px;font-size:.8rem;opacity:0;transition:0.3s;z-index:9999;text-align:center}
 .toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
-.toast.ok{border-color:#10b981;color:#10b981}
-.toast.err{border-color:#ef4444;color:#ef4444}
 .logout{background:none;border:none;color:#6b7280;cursor:pointer}
+@media(max-width:500px){.lr-layout{flex-direction:column-reverse}.lr-preview-aside{width:100%;text-align:center}.lr-thumb{height:160px}}
 </style>
 </head>
 <body>
 <div id="toast" class="toast"></div>
 
-<!-- LOGIN PAGE -->
+<!-- ZOOM OVERLAY -->
+<div id="zoom-overlay" onclick="this.style.display='none'">
+    <img id="zoom-img" src="">
+</div>
+
 <div id="pg-login" class="center">
   <div class="card">
-    <div style="font-size:2rem;font-weight:900;color:#6c63ff;margin-bottom:4px">TMS</div>
-    <div style="color:#6b7280;font-size:.8rem;margin-bottom:24px">Transporter Portal</div>
+    <div style="font-size:2.2rem;font-weight:900;color:#6c63ff;margin-bottom:4px">TMS</div>
+    <div style="color:#6b7280;font-size:.85rem;margin-bottom:24px">Supply Chain Intelligence</div>
     <div class="field"><label>Username</label><input id="inp-u" placeholder="Enter username"/></div>
     <div class="field"><label>Password</label><input id="inp-p" type="password" placeholder="Enter password"/></div>
     <button class="btn btn-purple btn-full" id="btn-login" onclick="doLogin()">Login</button>
   </div>
 </div>
 
-<!-- MAIN PAGE -->
 <div id="pg-main" class="page">
   <div class="topbar"><div><div class="brand">TMS</div><div class="role-tag" id="user-tag"></div></div><button class="logout" onclick="doLogout()">Logout</button></div>
   
@@ -66,7 +85,6 @@ td{padding:8px;border-top:1px solid #2e3248;white-space:nowrap}
 
   <div id="res-area"></div>
 
-  <!-- UPDATE SECTION -->
   <div id="trans-box" style="display:none" class="box">
     <div class="box-title">Status Update</div>
     <select id="status-sel" onchange="checkDelivered()" style="margin-bottom:12px">
@@ -113,7 +131,7 @@ let CU=null, pBlob=null;
 
 function toast(m,t=''){
   const el=$('toast'); el.textContent=m; el.className=`toast on ${t==='ok'?'ok':t==='err'?'err':''}`;
-  setTimeout(()=>el.classList.remove('on'),4000);
+  setTimeout(()=>el.classList.remove('on'),3000);
 }
 
 async function doLogin(){
@@ -134,7 +152,6 @@ async function doSearch(){
   if(!s.exists)return toast('Not Found','err');
   const d=s.data();
   const invs=await db.collection('invoices').where('lr_no','==',lr).get();
-  
   $('res-area').innerHTML=renderLR(lr,d,invs.docs.map(x=>x.data()));
   if(CU.role==='Transporter'){
     $('trans-box').style.display='block';
@@ -148,62 +165,87 @@ function checkDelivered(){
   $('photo-ui').style.display=$('status-sel').value==='Delivered'?'block':'none';
 }
 
+function zoomImg(url){
+    $('zoom-img').src = url;
+    $('zoom-overlay').style.display = 'flex';
+}
+
 async function handleImg(inp){
   const f=inp.files[0]; if(!f)return;
   toast('Optimizing image...');
   pBlob=await compress(f);
   $('prev-img').src=URL.createObjectURL(pBlob);
   $('prev-box').style.display='block';
-  $('img-size').textContent=`Optimized: ${Math.round(pBlob.size/1024)}KB`;
+  $('img-size').textContent=`Ready: ${Math.round(pBlob.size/1024)}KB`;
 }
 
-// THE FASTER UNIFIED UPDATE
 async function doUnifiedUpdate(){
   const lr=$('trans-box').dataset.lr;
   const st=$('status-sel').value;
   const btn=$('up-btn');
-
   if(st==='Delivered' && !pBlob) return toast('Image Required','err');
 
-  // 1. UI LOCK
-  btn.disabled=true; 
-  btn.textContent='Updating...';
+  btn.disabled=true; btn.textContent='Updating...';
+  const timeoutId = setTimeout(() => {
+    btn.disabled=false; btn.textContent='Confirm Update';
+    toast('Network Hang - Please Retry','err');
+  }, 12000);
 
   try {
     let upData = { status:st, last_updated:TS(), updated_by:CU.id };
-    
-    // 2. PARALLEL EXECUTION
     if(pBlob){
       const ref=ST.ref(`lr_copies/${lr}_${Date.now()}.jpg`);
       const snap = await ref.put(pBlob);
       upData.photo_url = await snap.ref.getDownloadURL();
     }
-
     await db.collection('lr_master').doc(lr).update(upData);
-    
-    toast('Success! LR Updated','ok');
-    pBlob=null; 
-    $('prev-box').style.display='none';
-    await doSearch(); // Instant refresh
-    
+    clearTimeout(timeoutId);
+    toast('Success','ok');
+    pBlob=null; $('prev-box').style.display='none';
+    doSearch();
   } catch(e) {
-    console.error(e);
-    toast('Error: Check connection/rules','err');
+    clearTimeout(timeoutId);
+    toast('Update failed','err');
   } finally {
-    // 3. ALWAYS RESET BUTTON
-    btn.disabled=false;
-    btn.textContent='Confirm Update';
+    btn.disabled=false; btn.textContent='Confirm Update';
   }
 }
 
 function renderLR(lr,d,invs){
   const c=d.status==='Delivered'?'#10b981':'#f59e0b';
   return `<div class="lr-card">
-    <div class="lr-head"><div class="lr-num">${lr}</div><span class="badge" style="background:${c}22;color:${c}">${d.status}</span></div>
-    <div class="grid2"><div class="kv"><span>Store</span><strong>${d.to_code}</strong></div><div class="kv"><span>Date</span><strong>${d.lr_date||'—'}</strong></div></div>
-    ${d.photo_url?`<div style="margin-top:10px"><img src="${d.photo_url}" style="width:100%;border-radius:8px;border:1px solid #2e3248"/></div>`:''}
-    <div class="tbl-wrap"><table><thead><tr><th>Invoice</th><th>Qty</th></tr></thead><tbody>
-    ${invs.map(i=>`<tr><td>${i.invoice_no}</td><td>${i.invoice_qty}</td></tr>`).join('')}</tbody></table></div>
+    <div class="lr-layout">
+        <div class="lr-details">
+            <div class="lr-head">
+                <div class="lr-num">LR: ${lr}</div>
+                <span class="badge" style="background:${c}22;color:${c}">${d.status}</span>
+            </div>
+            <div class="grid2">
+                <div class="kv"><span>Store Code</span><strong>${d.to_code}</strong></div>
+                <div class="kv"><span>LR Date</span><strong>${d.lr_date||'—'}</strong></div>
+                <div class="kv"><span>Invoices</span><strong>${invs.length}</strong></div>
+                <div class="kv"><span>Vehicle</span><strong>${d.vehicle_no||'—'}</strong></div>
+            </div>
+        </div>
+        
+        <div class="lr-preview-aside">
+            ${d.photo_url ? `
+            <div class="lr-thumb-wrapper" onclick="zoomImg('${d.photo_url}')">
+                <img class="lr-thumb" src="${d.photo_url}">
+                <div class="zoom-hint">TAP TO ZOOM 🔍</div>
+            </div>` : `
+            <div style="font-size:0.65rem; color:#6b7280; text-align:center; padding:20px; border:1px dashed #2e3248; border-radius:8px;">
+                📷 No Image<br>Uploaded
+            </div>`}
+        </div>
+    </div>
+    
+    <div class="tbl-wrap">
+        <table>
+            <thead><tr><th>Invoice</th><th>Order</th><th>Qty</th></tr></thead>
+            <tbody>${invs.map(i=>`<tr><td>${i.invoice_no}</td><td>${i.order_no}</td><td>${i.invoice_qty}</td></tr>`).join('')}</tbody>
+        </table>
+    </div>
   </div>`;
 }
 
@@ -216,7 +258,7 @@ function compress(f){
         const c=document.createElement('canvas');
         const w=800, scale=w/i.width; c.width=w; c.height=i.height*scale;
         c.getContext('2d').drawImage(i,0,0,c.width,c.height);
-        c.toBlob(b=>res(b),'image/jpeg',0.5); // Quality 0.5 for extra speed
+        c.toBlob(b=>res(b),'image/jpeg',0.5);
       }
     }
   });

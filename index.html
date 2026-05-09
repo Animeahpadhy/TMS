@@ -3,51 +3,47 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>TMS — Transport Management System</title>
+<title>TMS — Enterprise Logistics Hub</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:system-ui,sans-serif;background:#0f1117;color:#e8eaf6;min-height:100vh;font-size:14px}
 .center{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
 .card{background:#1a1d27;border:1px solid #2e3248;border-radius:16px;padding:28px;width:100%;max-width:400px}
 .page{display:none;max-width:1100px;margin:0 auto;padding:16px 16px 100px}
-.box{background:#1a1d27;border:1px solid #2e3248;border-radius:12px;padding:16px;margin-bottom:14px}
-.box-title{font-size:.72rem;color:#6b7280;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;font-weight:700}
+.box{background:#1a1d27;border:1px solid #2e3248;border-radius:12px;padding:20px;margin-bottom:14px}
+.box-title{font-size:.75rem;color:#6b7280;text-transform:uppercase;letter-spacing:.08em;margin-bottom:15px;font-weight:700}
 .topbar{background:#1a1d27;border-bottom:1px solid #2e3248;padding:12px 20px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:200}
 .brand{font-weight:800;color:#6c63ff;font-size:1.1rem}
 .tabs{display:flex;gap:4px;background:#22263a;border-radius:10px;padding:4px;margin:14px 0}
 .tab{flex:1;padding:8px 4px;text-align:center;border:none;background:transparent;color:#6b7280;font-size:.8rem;font-weight:700;cursor:pointer;border-radius:7px}
 .tab.on{background:#6c63ff;color:#fff}
-input,select{width:100%;background:#22263a;border:1px solid #2e3248;color:#e8eaf6;border-radius:8px;padding:10px;font-size:.9rem;outline:none}
+input,select{width:100%;background:#22263a;border:1px solid #2e3248;color:#e8eaf6;border-radius:8px;padding:12px;font-size:.95rem;outline:none}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 18px;border:none;border-radius:8px;font-size:.88rem;font-weight:700;cursor:pointer}
-.btn-full{width:100%}.btn-green{background:#10b981;color:#fff}.btn-purple{background:#6c63ff;color:#fff}.btn-gray{background:#22263a;color:#e8eaf6;border:1px solid #2e3248}
+.btn-purple{background:#6c63ff;color:#fff}.btn-green{background:#10b981;color:#fff}.btn-gray{background:#22263a;color:#e8eaf6;border:1px solid #2e3248}.btn-red{background:#ef4444;color:#fff}.btn-teal{background:transparent;color:#00d4aa;border:1px solid #00d4aa}
+.srow{display:flex;gap:10px}.srow input{flex:1}
 
-/* SPLIT LAYOUT FOR SEARCH RESULT */
-.lr-card{background:#1a1d27;border:1px solid #2e3248;border-radius:12px;padding:20px;margin-top:10px}
-.lr-flex{display:flex;gap:20px;justify-content:space-between;align-items:flex-start}
-.lr-details{flex:1}.lr-num{font-size:1.2rem;font-weight:800;color:#00d4aa;font-family:monospace}
-.badge{font-size:.7rem;font-weight:800;padding:4px 10px;border-radius:20px;text-transform:uppercase}
-
-/* GRID FOR KEY SHIPMENT DATA */
-.data-grid{display:grid;grid-template-columns:repeat(auto-fit, minmax(140px, 1fr));gap:15px;margin:20px 0}
+/* PRO LR CARD CSS */
+.lr-card{background:#1a1d27;border:1px solid #2e3248;border-radius:12px;padding:24px;margin-top:15px}
+.lr-flex{display:flex;gap:24px;justify-content:space-between;align-items:flex-start}
+.lr-details{flex:1}.lr-num{font-size:1.4rem;font-weight:800;color:#00d4aa;font-family:monospace}
+.badge{font-size:.65rem;font-weight:800;padding:4px 10px;border-radius:20px;text-transform:uppercase}
+.data-grid{display:grid;grid-template-columns:repeat(auto-fit, minmax(150px, 1fr));gap:15px;margin:20px 0}
 .kv-item label{display:block;font-size:10px;color:#6b7280;text-transform:uppercase;font-weight:600;margin-bottom:2px}
 .kv-item b{display:block;font-size:13px;color:#e8eaf6}
-
-.lr-preview{width:180px;text-align:right}
+.lr-preview{width:200px;text-align:right}
 .lr-thumb-wrap{border:2px solid #2e3248;border-radius:10px;overflow:hidden;cursor:zoom-in;background:#000}
-.lr-thumb{width:100%;height:120px;object-fit:cover;display:block}
-.zoom-btn{background:#6c63ff;color:#fff;font-size:9px;font-weight:800;padding:4px;text-align:center}
-
+.lr-thumb{width:100%;height:130px;object-fit:cover;display:block}
+.zoom-btn{background:#6c63ff;color:#fff;font-size:10px;font-weight:800;padding:6px;text-align:center}
+.tbl-wrap{overflow-x:auto;border-radius:8px;border:1px solid #2e3248;margin-top:10px}
+table{width:100%;border-collapse:collapse;font-size:.8rem}
+th{background:#22263a;padding:12px;text-align:left;color:#6b7280;text-transform:uppercase}
+td{padding:12px;border-top:1px solid #2e3248;white-space:nowrap}
+.row-total{background:#22263a;font-weight:bold}
 #zoom-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.95);z-index:2000;align-items:center;justify-content:center;cursor:zoom-out}
 #zoom-img{max-width:95%;max-height:95vh;border-radius:8px}
-
-.tbl-wrap{overflow-x:auto;border-radius:8px;border:1px solid #2e3248;margin-top:10px}
-table{width:100%;border-collapse:collapse;font-size:.75rem}
-th{background:#22263a;padding:10px;text-align:left;color:#6b7280;text-transform:uppercase}
-td{padding:10px;border-top:1px solid #2e3248;white-space:nowrap}
-.row-total{background:#22263a;font-weight:bold}
-
-.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(30px);background:#1a1d27;border:1px solid #2e3248;color:#e8eaf6;padding:10px 20px;border-radius:8px;font-size:.83rem;opacity:0;transition:.3s;z-index:9999;text-align:center}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(30px);background:#1a1d27;border:1px solid #2e3248;color:#e8eaf6;padding:12px 24px;border-radius:8px;opacity:0;transition:.3s;z-index:9999;text-align:center}
 .toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+.drop{border:2px dashed #2e3248;border-radius:10px;padding:40px;text-align:center;cursor:pointer}
 </style>
 </head>
 <body>
@@ -57,17 +53,17 @@ td{padding:10px;border-top:1px solid #2e3248;white-space:nowrap}
 <!-- LOGIN -->
 <div id="pg-login" class="center">
   <div class="card">
-    <div style="font-size:2.5rem;font-weight:900;color:#6c63ff;margin-bottom:4px">TMS</div>
-    <div style="color:#6b7280;font-size:.85rem;margin-bottom:24px">Supply Chain Control</div>
+    <div style="font-size:2.5rem;font-weight:900;color:#6c63ff;margin-bottom:5px">TMS</div>
+    <div style="color:#6b7280;font-size:.85rem;margin-bottom:25px">Supply Chain Control</div>
     <input id="inp-u" placeholder="Username" style="margin-bottom:12px"/>
     <input id="inp-p" type="password" placeholder="Password" style="margin-bottom:20px"/>
     <button class="btn btn-purple btn-full" onclick="doLogin()">Secure Login</button>
   </div>
 </div>
 
-<!-- MAIN PAGE -->
+<!-- MAIN APP -->
 <div id="pg-main" class="page">
-  <div class="topbar"><div><div class="brand">TMS</div><div class="role-tag" id="user-tag"></div></div><button style="background:none; border:none; color:#6b7280; cursor:pointer" onclick="location.reload()">Logout</button></div>
+  <div class="topbar"><div><div class="brand">TMS</div><div class="role-tag" id="user-tag" style="font-size:11px; color:#6b7280"></div></div><button style="background:none; border:none; color:#ef4444; cursor:pointer; font-weight:bold" onclick="location.reload()">Logout</button></div>
   
   <div class="tabs">
     <button class="tab on" id="t-lr" onclick="showTab('lr')">🔍 Search</button>
@@ -76,14 +72,14 @@ td{padding:10px;border-top:1px solid #2e3248;white-space:nowrap}
     <button class="tab" id="t-us" onclick="showTab('us')">👥 Users</button>
   </div>
 
+  <!-- SECTION: SEARCH -->
   <div id="sec-lr">
-    <div class="box"><div class="box-title">Search Shipment</div><div style="display:flex; gap:8px"><input id="srch-lr" placeholder="Enter LR Number"/><button class="btn btn-gray" onclick="doSearch()">Search</button></div></div>
+    <div class="box"><div class="box-title">Search Shipment</div><div class="srow"><input id="srch-lr" placeholder="Enter LR Number"/><button class="btn btn-gray" onclick="doSearch()">Search</button></div></div>
     <div id="res-area"></div>
     
-    <!-- RECORD UPDATE AREA -->
     <div id="action-box" style="display:none" class="box">
-        <div class="box-title">Record Update</div>
-        <select id="status-sel" onchange="checkDelv()" class="field" style="margin-bottom:15px"><option value="In Transit">In Transit</option><option value="Reached WH">Reached WH</option><option value="Out for Delivery">Out for Delivery</option><option value="Delivered">Delivered</option></select>
+        <div class="box-title">Operational Update</div>
+        <select id="status-sel" onchange="checkDelv()" style="margin-bottom:15px"><option value="In Transit">In Transit</option><option value="Reached WH">Reached WH</option><option value="Out for Delivery">Out for Delivery</option><option value="Delivered">Delivered</option></select>
         <div id="photo-ui" style="display:none">
             <div style="display:flex; gap:8px; margin-bottom:10px"><button class="btn btn-gray" style="flex:1" onclick="$('cam').click()">📷 Camera</button><button class="btn btn-gray" style="flex:1" onclick="$('gal').click()">🖼 Gallery</button></div>
             <div id="prev-box" style="display:none; text-align:center; margin-bottom:15px"><img id="prev-img" style="max-width:100%; border-radius:8px; border:1px solid #10b981"/></div>
@@ -91,8 +87,35 @@ td{padding:10px;border-top:1px solid #2e3248;white-space:nowrap}
         <button class="btn btn-green btn-full" onclick="doUnifiedUpdate()">Update Record</button>
     </div>
   </div>
+
+  <!-- SECTION: UPLOAD -->
+  <div id="sec-up" style="display:none">
+    <div class="box">
+      <div class="box-title">Bulk LR Upload</div>
+      <button class="btn btn-teal btn-sm" style="margin-bottom:15px" onclick="dlFormat('lr')">⬇ Download Upload Format</button>
+      <div class="drop" onclick="$('lr-file').click()">📂 Select LR Excel/CSV<input type="file" id="lr-file" accept=".xlsx,.csv" style="display:none" onchange="toast('File Loaded')"/></div>
+      <button class="btn btn-green btn-full" style="margin-top:15px">Process Upload</button>
+    </div>
+  </div>
+
+  <!-- SECTION: MASTERS -->
+  <div id="sec-ms" style="display:none">
+    <div class="tabs" style="margin-top:0"><button class="tab on" id="sub-store" onclick="subMaster('store')">🏪 Stores</button><button class="tab" id="sub-matrix" onclick="subMaster('matrix')">📏 Distance Matrix</button></div>
+    <div id="ms-store">
+        <div class="box"><button class="btn btn-teal btn-sm" onclick="dlFormat('store')">⬇ Format</button><button class="btn btn-gray btn-full" style="margin-top:10px" onclick="loadStoreData()">View Store Master</button><div id="store-view" class="tbl-wrap"></div></div>
+    </div>
+    <div id="ms-matrix" style="display:none">
+        <div class="box"><button class="btn btn-teal btn-sm" onclick="dlFormat('dist')">⬇ Format</button><button class="btn btn-gray btn-full" style="margin-top:10px" onclick="loadDistData()">View SLAs</button><div id="dist-view" class="tbl-wrap"></div></div>
+    </div>
+  </div>
+
+  <!-- SECTION: USERS -->
+  <div id="sec-us" style="display:none">
+    <div class="box"><div class="box-title">User Management</div><button class="btn btn-gray btn-full" onclick="loadUsers()">Refresh User List</button><div id="user-view" class="tbl-wrap"></div></div>
+  </div>
 </div>
 
+<!-- HIDDEN INPUTS -->
 <input type="file" id="cam" accept="image/*" capture="environment" style="display:none" onchange="handleImg(this)"/>
 <input type="file" id="gal" accept="image/*" style="display:none" onchange="handleImg(this)"/>
 
@@ -110,15 +133,16 @@ firebase.initializeApp({
     appId:"1:279467148642:web:c458996bca6c85ed33983b"
 });
 const db=firebase.firestore(), ST=firebase.storage(), TS=()=>firebase.firestore.FieldValue.serverTimestamp(), $=id=>document.getElementById(id);
-let CU=null, pBlob=null, STORE_MASTER={}, WH_MASTER={};
+let CU=null, pBlob=null, STORE_MASTER={};
 
 function toast(m){ const el=$('toast'); el.textContent=m; el.classList.add('on'); setTimeout(()=>el.classList.remove('on'),3000); }
 
 async function doLogin(){
-    const u=$('inp-u').value.trim(), p=$('inp-p').value.trim();
+    const u=$('inp-u').value.trim(), p=$('inp-p').value.trim(); if(!u || !p) return;
     const snap=await db.collection('users').doc(u).get();
     if(snap.exists && snap.data().password===p){
         CU={id:u,...snap.data()};
+        $('user-tag').textContent = `${CU.role} · ${CU.id}`;
         await loadMasters();
         $('pg-login').style.display='none'; $('pg-main').style.display='block';
     } else alert('Unauthorized');
@@ -127,19 +151,18 @@ async function doLogin(){
 async function loadMasters(){
     const s = await db.collection('store_master').get();
     s.forEach(d=>STORE_MASTER[d.id]=d.data());
-    // Assume Warehouse names are stored in a similar collection or logic
 }
 
-function showTab(t){ ['lr','up','ms','us'].forEach(x=>{ $(`t-${x}`).classList.toggle('on',x===t); }); }
+function showTab(t){ ['lr','up','ms','us'].forEach(x=>{ $(`t-${x}`).classList.toggle('on',x===t); $(`sec-${x}`).style.display=x===t?'block':'none'; }); }
+function subMaster(t){ ['store','matrix'].forEach(x=>{ $(`sub-${x}`).classList.toggle('on',x===t); $(`ms-${x}`).style.display=x===t?'block':'none'; }); }
 
 async function doSearch(){
     const lr=$('srch-lr').value.trim().toUpperCase(); if(!lr) return;
     const s=await db.collection('lr_master').doc(lr).get();
     if(!s.exists) return toast('LR Not Found');
     const d=s.data(), invs=await db.collection('invoices').where('lr_no','==',lr).get();
-    const invData = invs.docs.map(x=>x.data());
     
-    // SMART DELIVERY DATE CALCULATION
+    // DELIVERY DATE LOGIC
     let delDate = '—';
     if(d.status === 'Delivered' || d.status === 'Store Confirmed'){
         const tTs = d.photo_uploaded_at?.toDate ? d.photo_uploaded_at.toDate() : Infinity;
@@ -148,8 +171,7 @@ async function doSearch(){
         if(earlier != Infinity) delDate = earlier.toLocaleDateString('en-IN') + ' ' + earlier.toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'});
     }
 
-    $('res-area').innerHTML=renderLR(lr,d,invData,delDate);
-    
+    $('res-area').innerHTML=renderLR(lr,d,invs.docs.map(x=>x.data()),delDate);
     if(CU.role==='Admin' || CU.role==='Transporter' || CU.is_super){
         $('action-box').style.display='block'; $('action-box').dataset.lr=lr;
         $('status-sel').value=d.status||'In Transit'; checkDelv();
@@ -169,11 +191,42 @@ async function doUnifiedUpdate(){
     } catch(e){ toast('Error'); }
 }
 
+async function loadStoreData(){
+    const s = await db.collection('store_master').get();
+    let h = '<table><thead><tr><th>Code</th><th>Name</th><th>City</th></tr></thead><tbody>';
+    s.forEach(d=>{ const r=d.data(); h+=`<tr><td>${d.id}</td><td>${r.name}</td><td>${r.city}</td></tr>`; });
+    $('store-view').innerHTML = h+'</tbody></table>';
+}
+
+async function loadDistData(){
+    const s = await db.collection('distance_matrix').get();
+    let h = '<table><thead><tr><th>WH</th><th>City</th><th>Days</th></tr></thead><tbody>';
+    s.forEach(d=>{ const r=d.data(); h+=`<tr><td>${r.from_wh}</td><td>${r.to_city}</td><td>${r.transit_days}</td></tr>`; });
+    $('dist-view').innerHTML = h+'</tbody></table>';
+}
+
+async function loadUsers(){
+    const s = await db.collection('users').get();
+    let h = '<table><thead><tr><th>User ID</th><th>Pass</th><th>Role</th></tr></thead><tbody>';
+    s.forEach(d=>{ const r=d.data(); h+=`<tr><td>${d.id}</td><td style="font-family:monospace">${r.password}</td><td>${r.role}</td></tr>`; });
+    $('user-view').innerHTML = h+'</tbody></table>';
+}
+
+function dlFormat(t){
+    const h = {
+        lr: 'FROM_CODE,TO_CODE,INVOICE NO,ORDER NO.,INV DATE,TRANSPORTER NAME,LR -NO,LR DATE,VEHICLE NO,INVOICE QTY,INV VALUE,NO OF BOX\n',
+        store: 'SAP STORE CODE,NAME,CITY,STATE,TYPE\n',
+        dist: 'FROM_WH,TO_CITY,DISTANCE_KM\n',
+        us: 'username,password,role,store_code,wh_code\n'
+    };
+    const a=document.createElement('a'); a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(h[t]); a.download=`TMS_${t}_Format.csv`; a.click();
+}
+
 function renderLR(lr,d,invs,delDate){
     const c=d.status==='Delivered'?'#10b981':'#f59e0b';
     const store = STORE_MASTER[d.to_code] || {name: d.to_code || '—'};
-    const totalBoxes = invs.reduce((a,i)=>a+(parseInt(i.box_count)||0),0);
-    const totalQty = invs.reduce((a,i)=>a+(i.invoice_qty||0),0);
+    const tBox = invs.reduce((a,i)=>a+(parseInt(i.box_count)||0),0);
+    const tQty = invs.reduce((a,i)=>a+(i.invoice_qty||0),0);
 
     return `<div class="lr-card">
     <div class="lr-flex">
@@ -181,35 +234,22 @@ function renderLR(lr,d,invs,delDate){
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px">
                 <div class="lr-num">LR: ${lr}</div><span class="badge" style="background:${c}22;color:${c}">${d.status}</span>
             </div>
-            
             <div class="data-grid">
                 <div class="kv-item"><label>Store Name</label><b>${store.name}</b></div>
                 <div class="kv-item"><label>From WH</label><b>${d.from_code || '—'}</b></div>
                 <div class="kv-item"><label>LR Date</label><b>${d.lr_date || '—'}</b></div>
                 <div class="kv-item"><label>Delivery Date</label><b>${delDate}</b></div>
-                <div class="kv-item"><label>No. of Invoices</label><b>${invs.length}</b></div>
-                <div class="kv-item"><label>Total Boxes</label><b>${totalBoxes}</b></div>
+                <div class="kv-item"><label>Invoices</label><b>${invs.length}</b></div>
+                <div class="kv-item"><label>Total Boxes</label><b>${tBox}</b></div>
             </div>
         </div>
-        
         <div class="lr-preview">
-            ${d.photo_url ? `
-            <div class="lr-thumb-wrap" onclick="zoomImg('${d.photo_url}')">
-                <img class="lr-thumb" src="${d.photo_url}">
-                <div class="zoom-btn">ZOOM 🔍</div>
-            </div>` : '<div style="font-size:10px; color:#6b7280; padding:40px; border:1px dashed #444; border-radius:10px; text-align:center">No Photo Proof</div>'}
+            ${d.photo_url ? `<div class="lr-thumb-wrap" onclick="zoomImg('${d.photo_url}')"><img class="lr-thumb" src="${d.photo_url}"><div class="zoom-btn">ZOOM 🔍</div></div>` : '<div style="font-size:10px; color:#6b7280; padding:40px; border:1px dashed #444; border-radius:10px; text-align:center">No Proof</div>'}
         </div>
     </div>
-    
-    <div class="tbl-wrap">
-        <table>
-            <thead><tr><th>Invoice</th><th>Order</th><th>Qty</th><th>Boxes</th></tr></thead>
-            <tbody>
-                ${invs.map(i=>`<tr><td>${i.invoice_no}</td><td>${i.order_no || '—'}</td><td>${i.invoice_qty}</td><td>${i.box_count || 0}</td></tr>`).join('')}
-                <tr class="row-total"><td colspan="2">TOTAL</td><td>${totalQty}</td><td>${totalBoxes}</td></tr>
-            </tbody>
-        </table>
-    </div></div>`;
+    <div class="tbl-wrap"><table><thead><tr><th>Invoice</th><th>Order</th><th>Qty</th><th>Boxes</th></tr></thead><tbody>
+    ${invs.map(i=>`<tr><td>${i.invoice_no}</td><td>${i.order_no || '—'}</td><td>${i.invoice_qty}</td><td>${i.box_count || 0}</td></tr>`).join('')}
+    <tr class="row-total"><td colspan="2">TOTAL</td><td>${tQty}</td><td>${tBox}</td></tr></tbody></table></div></div>`;
 }
 
 function compress(f){ return new Promise(res=>{ const r=new FileReader(); r.readAsDataURL(f); r.onload=e=>{ const i=new Image(); i.src=e.target.result; i.onload=()=>{ const c=document.createElement('canvas'); const w=800, s=w/i.width; c.width=w; c.height=i.height*s; c.getContext('2d').drawImage(i,0,0,c.width,c.height); c.toBlob(b=>res(b),'image/jpeg',0.6); } } }); }

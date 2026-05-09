@@ -1357,7 +1357,11 @@ function lrCard(lr,d,invs,showTime,showConfirm,totals){
       <table>
         <thead><tr><th>Invoice</th><th>Order</th><th>Store</th><th>Qty</th><th>Value</th><th>Boxes</th></tr></thead>
         <tbody>
-          ${invs.map(i=>`<tr><td style="font-family:monospace">${i.invoice_no}</td><td>${i.order_no}</td><td>${i.store_name||i.to_code||'—'}</td><td>${i.invoice_qty}</td><td>₹${Number(i.invoice_value).toLocaleString('en-IN')}</td><td>${i.box_count}</td></tr>`).join('')}
+          ${invs.map(i=>{
+            const iCode=String(i.to_code||i.store_name||'');
+            const iName=STORE_MASTER[iCode]?.name||STORE_MASTER[parseInt(iCode)]?.name||i.store_name||iCode||'—';
+            return`<tr><td style="font-family:monospace">${i.invoice_no}</td><td>${i.order_no}</td><td>${iName}</td><td>${i.invoice_qty}</td><td>₹${Number(i.invoice_value).toLocaleString('en-IN')}</td><td>${i.box_count}</td></tr>`;
+          }).join('')}
           <tr style="background:#22263a;font-weight:700"><td colspan="3">TOTAL</td><td>${totalQty}</td><td>₹${Number(totalVal).toLocaleString('en-IN')}</td><td>${totalBoxes}</td></tr>
         </tbody>
       </table>

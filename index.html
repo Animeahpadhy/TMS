@@ -17,31 +17,43 @@ body{font-family:system-ui,sans-serif;background:#0f1117;color:#e8eaf6;min-heigh
 .tabs{display:flex;gap:4px;background:#22263a;border-radius:10px;padding:4px;margin:14px 0}
 .tab{flex:1;padding:8px 4px;text-align:center;border:none;background:transparent;color:#6b7280;font-size:.8rem;font-weight:700;cursor:pointer;border-radius:7px}
 .tab.on{background:#6c63ff;color:#fff}
-input,select{width:100%;background:#22263a;border:1px solid #2e3248;color:#e8eaf6;border-radius:8px;padding:12px;font-size:.95rem;outline:none}
+input,select,textarea{width:100%;background:#22263a;border:1px solid #2e3248;color:#e8eaf6;border-radius:8px;padding:12px;font-size:.95rem;outline:none}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 18px;border:none;border-radius:8px;font-size:.88rem;font-weight:700;cursor:pointer}
 .btn-purple{background:#6c63ff;color:#fff}.btn-green{background:#10b981;color:#fff}.btn-gray{background:#22263a;color:#e8eaf6;border:1px solid #2e3248}.btn-red{background:#ef4444;color:#fff}.btn-teal{background:transparent;color:#00d4aa;border:1px solid #00d4aa}
 .srow{display:flex;gap:10px}.srow input{flex:1}
 
-/* PRO LR CARD CSS */
-.lr-card{background:#1a1d27;border:1px solid #2e3248;border-radius:12px;padding:24px;margin-top:15px}
-.lr-flex{display:flex;gap:24px;justify-content:space-between;align-items:flex-start}
-.lr-details{flex:1}.lr-num{font-size:1.4rem;font-weight:800;color:#00d4aa;font-family:monospace}
-.badge{font-size:.65rem;font-weight:800;padding:4px 10px;border-radius:20px;text-transform:uppercase}
-.data-grid{display:grid;grid-template-columns:repeat(auto-fit, minmax(150px, 1fr));gap:15px;margin:20px 0}
-.kv-item label{display:block;font-size:10px;color:#6b7280;text-transform:uppercase;font-weight:600;margin-bottom:2px}
-.kv-item b{display:block;font-size:13px;color:#e8eaf6}
-.lr-preview{width:200px;text-align:right}
-.lr-thumb-wrap{border:2px solid #2e3248;border-radius:10px;overflow:hidden;cursor:zoom-in;background:#000}
-.lr-thumb{width:100%;height:130px;object-fit:cover;display:block}
-.zoom-btn{background:#6c63ff;color:#fff;font-size:10px;font-weight:800;padding:6px;text-align:center}
-.tbl-wrap{overflow-x:auto;border-radius:8px;border:1px solid #2e3248;margin-top:10px}
-table{width:100%;border-collapse:collapse;font-size:.8rem}
-th{background:#22263a;padding:12px;text-align:left;color:#6b7280;text-transform:uppercase}
-td{padding:12px;border-top:1px solid #2e3248;white-space:nowrap}
-.row-total{background:#22263a;font-weight:bold}
+/* PRO-LEVEL LR CARD (Combined Layout) */
+.lr-card{background:#1a1d27;border:1px solid #33364d;border-radius:16px;padding:24px;margin-top:15px;position:relative}
+.lr-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+.lr-title{font-size:1.4rem;font-weight:800;color:#00d4aa;font-family:monospace}
+.lr-sub-header{font-size:11px;color:#6b7280;margin-bottom:15px}
+.status-badge{background:#f59e0b22;color:#f59e0b;font-size:10px;font-weight:800;padding:4px 12px;border-radius:20px;text-transform:uppercase}
+
+.overdue-banner{background:#ef444415;border:1px solid #ef444444;color:#ef4444;padding:10px 15px;border-radius:10px;font-size:12px;margin-bottom:20px;display:flex;align-items:center;gap:8px}
+.overdue-banner b{font-weight:800}
+
+.lr-flex-body{display:flex;gap:24px;align-items:flex-start}
+.lr-main-content{flex:1}
+.lr-grid{display:grid;grid-template-columns:repeat(auto-fit, minmax(140px, 1fr));gap:20px;margin-bottom:20px}
+.kv-pair label{display:block;font-size:10px;color:#6b7280;text-transform:uppercase;font-weight:600;margin-bottom:4px}
+.kv-pair span{display:block;font-size:14px;font-weight:800;color:#e8eaf6}
+
+.lr-photo-side{width:200px;text-align:right}
+.photo-box{border:2px solid #2e3248;border-radius:12px;overflow:hidden;background:#0f1117;cursor:zoom-in;transition:0.2s}
+.photo-box:hover{border-color:#6c63ff}
+.photo-img{width:100%;height:130px;object-fit:cover;display:block}
+.photo-footer{background:#6c63ff;color:white;font-size:9px;font-weight:800;padding:4px;text-align:center}
+
+.tbl-wrap{overflow-x:auto;border-radius:10px;border:1px solid #2e3248;margin-top:15px;background:#22263a33}
+table{width:100%;border-collapse:collapse;font-size:11px}
+th{background:#22263a;padding:12px 10px;text-align:left;color:#6b7280;text-transform:uppercase;font-size:9px;letter-spacing:1px}
+td{padding:12px 10px;border-top:1px solid #2e3248;white-space:nowrap}
+.row-total{background:#22263a;font-weight:800;color:#fff}
+
 #zoom-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.95);z-index:2000;align-items:center;justify-content:center;cursor:zoom-out}
-#zoom-img{max-width:95%;max-height:95vh;border-radius:8px}
-.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(30px);background:#1a1d27;border:1px solid #2e3248;color:#e8eaf6;padding:12px 24px;border-radius:8px;opacity:0;transition:.3s;z-index:9999;text-align:center}
+#zoom-img{max-width:95%;max-height:90vh;border-radius:10px}
+
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(30px);background:#1a1d27;border:1px solid #2e3248;color:#e8eaf6;padding:12px 24px;border-radius:8px;font-size:.83rem;opacity:0;transition:.3s;z-index:9999;text-align:center}
 .toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
 .drop{border:2px dashed #2e3248;border-radius:10px;padding:40px;text-align:center;cursor:pointer}
 </style>
@@ -54,17 +66,23 @@ td{padding:12px;border-top:1px solid #2e3248;white-space:nowrap}
 <div id="pg-login" class="center">
   <div class="card">
     <div style="font-size:2.5rem;font-weight:900;color:#6c63ff;margin-bottom:5px">TMS</div>
-    <div style="color:#6b7280;font-size:.85rem;margin-bottom:25px">Supply Chain Control</div>
+    <div style="color:#6b7280;font-size:.85rem;margin-bottom:25px">Enterprise Logistics Control</div>
     <input id="inp-u" placeholder="Username" style="margin-bottom:12px"/>
     <input id="inp-p" type="password" placeholder="Password" style="margin-bottom:20px"/>
     <button class="btn btn-purple btn-full" onclick="doLogin()">Secure Login</button>
   </div>
 </div>
 
-<!-- MAIN APP -->
+<!-- MAIN PAGE -->
 <div id="pg-main" class="page">
-  <div class="topbar"><div><div class="brand">TMS</div><div class="role-tag" id="user-tag" style="font-size:11px; color:#6b7280"></div></div><button style="background:none; border:none; color:#ef4444; cursor:pointer; font-weight:bold" onclick="location.reload()">Logout</button></div>
+  <div class="topbar"><div><div class="brand">TMS</div><div id="user-tag" style="font-size:11px; color:#6b7280"></div></div><button style="background:none; border:none; color:#ef4444; cursor:pointer" onclick="location.reload()">Logout</button></div>
   
+  <div id="super-tools" style="display:none" class="box">
+    <div class="box-title" style="color:#ef4444">⚠️ MASTER CONTROL & SECURITY LOGS</div>
+    <div style="display:flex; gap:8px; margin-bottom:10px"><button class="btn btn-red btn-full" onclick="nuke('lr_master')">Wipe LRs</button><button class="btn btn-red btn-full" onclick="nuke('invoices')">Wipe Invoices</button></div>
+    <div id="audit-log-list" style="font-size:10px; color:#6b7280; max-height:80px; overflow-y:auto; border-top:1px solid #2e3248; padding-top:8px"></div>
+  </div>
+
   <div class="tabs">
     <button class="tab on" id="t-lr" onclick="showTab('lr')">🔍 Search</button>
     <button class="tab" id="t-up" onclick="showTab('up')">📤 Upload</button>
@@ -72,52 +90,35 @@ td{padding:12px;border-top:1px solid #2e3248;white-space:nowrap}
     <button class="tab" id="t-us" onclick="showTab('us')">👥 Users</button>
   </div>
 
-  <!-- SECTION: SEARCH -->
   <div id="sec-lr">
     <div class="box"><div class="box-title">Search Shipment</div><div class="srow"><input id="srch-lr" placeholder="Enter LR Number"/><button class="btn btn-gray" onclick="doSearch()">Search</button></div></div>
     <div id="res-area"></div>
     
     <div id="action-box" style="display:none" class="box">
-        <div class="box-title">Operational Update</div>
-        <select id="status-sel" onchange="checkDelv()" style="margin-bottom:15px"><option value="In Transit">In Transit</option><option value="Reached WH">Reached WH</option><option value="Out for Delivery">Out for Delivery</option><option value="Delivered">Delivered</option></select>
+        <div class="box-title" id="edit-title">UPDATE RECORD</div>
+        <select id="status-sel" onchange="checkDelv()" style="margin-bottom:12px"><option value="In Transit">In Transit</option><option value="Reached WH">Reached WH</option><option value="Out for Delivery">Out for Delivery</option><option value="Delivered">Delivered</option></select>
         <div id="photo-ui" style="display:none">
-            <div style="display:flex; gap:8px; margin-bottom:10px"><button class="btn btn-gray" style="flex:1" onclick="$('cam').click()">📷 Camera</button><button class="btn btn-gray" style="flex:1" onclick="$('gal').click()">🖼 Gallery</button></div>
+            <button class="btn btn-gray btn-full" onclick="$('cam').click()" style="margin-bottom:10px">📷 Scan LR Proof</button>
             <div id="prev-box" style="display:none; text-align:center; margin-bottom:15px"><img id="prev-img" style="max-width:100%; border-radius:8px; border:1px solid #10b981"/></div>
         </div>
-        <button class="btn btn-green btn-full" onclick="doUnifiedUpdate()">Update Record</button>
+        <button class="btn btn-green btn-full" id="up-btn" onclick="doUnifiedUpdate()">Save Changes</button>
     </div>
   </div>
 
-  <!-- SECTION: UPLOAD -->
   <div id="sec-up" style="display:none">
-    <div class="box">
-      <div class="box-title">Bulk LR Upload</div>
-      <button class="btn btn-teal btn-sm" style="margin-bottom:15px" onclick="dlFormat('lr')">⬇ Download Upload Format</button>
-      <div class="drop" onclick="$('lr-file').click()">📂 Select LR Excel/CSV<input type="file" id="lr-file" accept=".xlsx,.csv" style="display:none" onchange="toast('File Loaded')"/></div>
-      <button class="btn btn-green btn-full" style="margin-top:15px">Process Upload</button>
-    </div>
+    <div class="box"><div class="box-title">Bulk LR Upload</div><button class="btn btn-teal btn-sm" onclick="dlFormat('lr')">⬇ Download Format</button><div class="drop" style="margin-top:10px" onclick="$('lr-file').click()">📂 Select LR CSV/Excel<input type="file" id="lr-file" accept=".xlsx,.csv" style="display:none"/></div></div>
   </div>
 
-  <!-- SECTION: MASTERS -->
   <div id="sec-ms" style="display:none">
-    <div class="tabs" style="margin-top:0"><button class="tab on" id="sub-store" onclick="subMaster('store')">🏪 Stores</button><button class="tab" id="sub-matrix" onclick="subMaster('matrix')">📏 Distance Matrix</button></div>
-    <div id="ms-store">
-        <div class="box"><button class="btn btn-teal btn-sm" onclick="dlFormat('store')">⬇ Format</button><button class="btn btn-gray btn-full" style="margin-top:10px" onclick="loadStoreData()">View Store Master</button><div id="store-view" class="tbl-wrap"></div></div>
-    </div>
-    <div id="ms-matrix" style="display:none">
-        <div class="box"><button class="btn btn-teal btn-sm" onclick="dlFormat('dist')">⬇ Format</button><button class="btn btn-gray btn-full" style="margin-top:10px" onclick="loadDistData()">View SLAs</button><div id="dist-view" class="tbl-wrap"></div></div>
-    </div>
+    <div class="tabs" style="margin-top:0"><button class="tab on" id="sub-store" onclick="subMaster('store')">🏪 Stores</button><button class="tab" id="sub-matrix" onclick="subMaster('matrix')">📏 Matrix</button></div>
+    <div id="ms-store"><div class="box"><button class="btn btn-gray btn-full" onclick="loadStoreData()">View Stores</button><div id="store-view" class="tbl-wrap"></div></div></div>
+    <div id="ms-matrix" style="display:none"><div class="box"><button class="btn btn-gray btn-full" onclick="loadDistData()">View SLAs</button><div id="dist-view" class="tbl-wrap"></div></div></div>
   </div>
 
-  <!-- SECTION: USERS -->
-  <div id="sec-us" style="display:none">
-    <div class="box"><div class="box-title">User Management</div><button class="btn btn-gray btn-full" onclick="loadUsers()">Refresh User List</button><div id="user-view" class="tbl-wrap"></div></div>
-  </div>
+  <div id="sec-us" style="display:none"><div class="box"><div class="box-title">Users</div><div id="user-view" class="tbl-wrap"></div></div></div>
 </div>
 
-<!-- HIDDEN INPUTS -->
 <input type="file" id="cam" accept="image/*" capture="environment" style="display:none" onchange="handleImg(this)"/>
-<input type="file" id="gal" accept="image/*" style="display:none" onchange="handleImg(this)"/>
 
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
@@ -125,55 +126,60 @@ td{padding:12px;border-top:1px solid #2e3248;white-space:nowrap}
 
 <script>
 firebase.initializeApp({
-    apiKey:"AIzaSyAPu5_BwUEu_xXdpXkmOJbuErGCGYqBUeE",
-    authDomain:"wh-logistics-system.firebaseapp.com",
-    projectId:"wh-logistics-system",
-    storageBucket:"wh-logistics-system.firebasestorage.app",
-    messagingSenderId:"279467148642",
-    appId:"1:279467148642:web:c458996bca6c85ed33983b"
+    apiKey: "AIzaSyAPu5_BwUEu_xXdpXkmOJbuErGCGYqBUeE",
+    authDomain: "wh-logistics-system.firebaseapp.com",
+    projectId: "wh-logistics-system",
+    storageBucket: "wh-logistics-system.firebasestorage.app",
+    messagingSenderId: "279467148642",
+    appId: "1:279467148642:web:c458996bca6c85ed33983b"
 });
 const db=firebase.firestore(), ST=firebase.storage(), TS=()=>firebase.firestore.FieldValue.serverTimestamp(), $=id=>document.getElementById(id);
-let CU=null, pBlob=null, STORE_MASTER={};
+let CU=null, pBlob=null, STORE_MASTER={}, userIP="Unknown";
+
+fetch('https://api.ipify.org?format=json').then(r=>r.json()).then(d=>userIP=d.ip).catch(()=>{});
 
 function toast(m){ const el=$('toast'); el.textContent=m; el.classList.add('on'); setTimeout(()=>el.classList.remove('on'),3000); }
 
 async function doLogin(){
-    const u=$('inp-u').value.trim(), p=$('inp-p').value.trim(); if(!u || !p) return;
+    const u=$('inp-u').value.trim(), p=$('inp-p').value.trim();
     const snap=await db.collection('users').doc(u).get();
     if(snap.exists && snap.data().password===p){
         CU={id:u,...snap.data()};
         $('user-tag').textContent = `${CU.role} · ${CU.id}`;
-        await loadMasters();
+        if(CU.is_super) $('super-tools').style.display='block';
+        await loadMastersRef();
         $('pg-login').style.display='none'; $('pg-main').style.display='block';
     } else alert('Unauthorized');
 }
 
-async function loadMasters(){
-    const s = await db.collection('store_master').get();
-    s.forEach(d=>STORE_MASTER[d.id]=d.data());
+async function loadMastersRef(){
+    const ss=await db.collection('store_master').get();
+    ss.forEach(d=>STORE_MASTER[d.id]=d.data());
 }
 
-function showTab(t){ ['lr','up','ms','us'].forEach(x=>{ $(`t-${x}`).classList.toggle('on',x===t); $(`sec-${x}`).style.display=x===t?'block':'none'; }); }
-function subMaster(t){ ['store','matrix'].forEach(x=>{ $(`sub-${x}`).classList.toggle('on',x===t); $(`ms-${x}`).style.display=x===t?'block':'none'; }); }
+function showTab(t){ ['lr','up','ms','us'].forEach(x=>{ $(`t-${x}`).classList.toggle('on',x===t); $(`sec-${x}`).style.display=x===t?'block':'none'; }); if(t==='us') loadUsers(); }
+function subMaster(t){ ['store','matrix'].forEach(x=>{ $(`ms-${x}`).style.display=x===t?'block':'none'; $(`sub-${x}`).classList.toggle('on',x===t); }); }
 
 async function doSearch(){
     const lr=$('srch-lr').value.trim().toUpperCase(); if(!lr) return;
     const s=await db.collection('lr_master').doc(lr).get();
     if(!s.exists) return toast('LR Not Found');
     const d=s.data(), invs=await db.collection('invoices').where('lr_no','==',lr).get();
+    const invData = invs.docs.map(x=>x.data());
     
-    // DELIVERY DATE LOGIC
+    // DELIVERY DATE LOGIC (Earliest of Store Confirm or Photo Upload)
     let delDate = '—';
     if(d.status === 'Delivered' || d.status === 'Store Confirmed'){
         const tTs = d.photo_uploaded_at?.toDate ? d.photo_uploaded_at.toDate() : Infinity;
         const sTs = d.confirmed_time?.toDate ? d.confirmed_time.toDate() : Infinity;
         const earlier = new Date(Math.min(tTs, sTs));
-        if(earlier != Infinity) delDate = earlier.toLocaleDateString('en-IN') + ' ' + earlier.toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'});
+        if(earlier != Infinity) delDate = earlier.toLocaleDateString('en-IN');
     }
 
-    $('res-area').innerHTML=renderLR(lr,d,invs.docs.map(x=>x.data()),delDate);
-    if(CU.role==='Admin' || CU.role==='Transporter' || CU.is_super){
+    $('res-area').innerHTML=renderLRCard(lr,d,invData,delDate);
+    if(CU.role==='Admin' || CU.role==='Transporter' || CU.is_super) {
         $('action-box').style.display='block'; $('action-box').dataset.lr=lr;
+        $('edit-title').textContent = `EDIT LR · ${lr}`;
         $('status-sel').value=d.status||'In Transit'; checkDelv();
     }
 }
@@ -185,24 +191,52 @@ async function handleImg(inp){ const f=inp.files[0]; if(!f)return; pBlob=await c
 async function doUnifiedUpdate(){
     const lr=$('action-box').dataset.lr, st=$('status-sel').value;
     try {
-        let up={status:st, last_updated:TS(), updated_by:CU.id};
-        if(pBlob){ const ref=ST.ref(`lr_copies/${lr}.jpg`); const snap=await ref.put(pBlob); up.photo_url=await snap.ref.getDownloadURL(); up.photo_uploaded_at=TS(); }
-        await db.collection('lr_master').doc(lr).update(up); toast('Success'); doSearch();
-    } catch(e){ toast('Error'); }
+        let upData={status:st, last_updated:TS(), updated_by:CU.id};
+        if(pBlob){ const ref=ST.ref(`lr_copies/${lr}.jpg`); const snap=await ref.put(pBlob); upData.photo_url=await snap.ref.getDownloadURL(); upData.photo_uploaded_at=TS(); }
+        await db.collection('lr_master').doc(lr).update(upData);
+        await db.collection('audit_logs').add({lr_no:lr, status_to:st, user:CU.id, timestamp:TS(), ip:userIP, device:navigator.userAgent});
+        toast('Updated Successfully'); doSearch();
+    } catch(e){ toast('Error Updating'); }
 }
 
-async function loadStoreData(){
-    const s = await db.collection('store_master').get();
-    let h = '<table><thead><tr><th>Code</th><th>Name</th><th>City</th></tr></thead><tbody>';
-    s.forEach(d=>{ const r=d.data(); h+=`<tr><td>${d.id}</td><td>${r.name}</td><td>${r.city}</td></tr>`; });
-    $('store-view').innerHTML = h+'</tbody></table>';
-}
+function renderLRCard(lr,d,invs,delDate){
+    const c=d.status==='Delivered'?'#10b981':'#f59e0b';
+    const store = STORE_MASTER[d.to_code] || {name: d.to_code || '—'};
+    const upTime = d.upload_time?.toDate ? d.upload_time.toDate().toLocaleString() : '—';
+    const tBox = invs.reduce((a,i)=>a+(parseInt(i.box_count)||0),0);
+    const tQty = invs.reduce((a,i)=>a+(i.invoice_qty||0),0);
+    const tVal = invs.reduce((a,i)=>a+(i.invoice_value||0),0);
 
-async function loadDistData(){
-    const s = await db.collection('distance_matrix').get();
-    let h = '<table><thead><tr><th>WH</th><th>City</th><th>Days</th></tr></thead><tbody>';
-    s.forEach(d=>{ const r=d.data(); h+=`<tr><td>${r.from_wh}</td><td>${r.to_city}</td><td>${r.transit_days}</td></tr>`; });
-    $('dist-view').innerHTML = h+'</tbody></table>';
+    return `
+    <div class="lr-card">
+        <div class="lr-header">
+            <div>
+                <div class="lr-title">LR: ${lr}</div>
+                <div class="lr-sub-header">${d.transporter || '—'} · ${d.vehicle_no || '—'}</div>
+            </div>
+            <span class="status-badge">${d.status}</span>
+        </div>
+        <div class="overdue-banner">🔴 <b>OVERDUE</b> | Expected: 12 Mar 2026 | Transit SLA: 4 days</div>
+        <div class="lr-flex-body">
+            <div class="lr-main-content">
+                <div class="lr-grid">
+                    <div class="kv-pair"><label>Store Code</label><span>${d.to_code}</span></div>
+                    <div class="kv-pair"><label>Store Name</label><span>${store.name}</span></div>
+                    <div class="kv-pair"><label>From (WH)</label><span>${d.from_code || '—'}</span></div>
+                    <div class="kv-pair"><label>LR Date</label><span>${d.lr_date || '—'}</span></div>
+                    <div class="kv-pair"><label>Delivery</label><span>${delDate}</span></div>
+                    <div class="kv-pair"><label>Total Boxes</label><span>${tBox}</span></div>
+                </div>
+                <div style="font-size:11px; color:#6b7280; margin-bottom:10px">📅 UPLOADED: ${upTime} 🔒</div>
+            </div>
+            <div class="lr-photo-side">
+                ${d.photo_url ? `<div class="photo-box" onclick="zoomImg('${d.photo_url}')"><img class="photo-img" src="${d.photo_url}"><div class="photo-footer">ZOOM 🔍</div></div>` : '<div style="font-size:10px; color:#6b7280; border:1px dashed #444; padding:20px; border-radius:8px; text-align:center">No Proof Uploaded</div>'}
+            </div>
+        </div>
+        <div class="tbl-wrap"><table><thead><tr><th>Invoice</th><th>Order</th><th>Store</th><th>Qty</th><th>Value</th><th>Boxes</th></tr></thead><tbody>
+        ${invs.map(i=>`<tr><td>${i.invoice_no}</td><td>${i.order_no || '—'}</td><td>${store.name}</td><td>${i.invoice_qty}</td><td>₹${Number(i.invoice_value).toLocaleString('en-IN')}</td><td>${i.box_count || 0}</td></tr>`).join('')}
+        <tr class="row-total"><td colspan="3">TOTAL</td><td>${tQty}</td><td>₹${Number(tVal).toLocaleString('en-IN')}</td><td>${tBox}</td></tr></tbody></table></div>
+    </div>`;
 }
 
 async function loadUsers(){
@@ -213,46 +247,12 @@ async function loadUsers(){
 }
 
 function dlFormat(t){
-    const h = {
-        lr: 'FROM_CODE,TO_CODE,INVOICE NO,ORDER NO.,INV DATE,TRANSPORTER NAME,LR -NO,LR DATE,VEHICLE NO,INVOICE QTY,INV VALUE,NO OF BOX\n',
-        store: 'SAP STORE CODE,NAME,CITY,STATE,TYPE\n',
-        dist: 'FROM_WH,TO_CITY,DISTANCE_KM\n',
-        us: 'username,password,role,store_code,wh_code\n'
-    };
-    const a=document.createElement('a'); a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(h[t]); a.download=`TMS_${t}_Format.csv`; a.click();
-}
-
-function renderLR(lr,d,invs,delDate){
-    const c=d.status==='Delivered'?'#10b981':'#f59e0b';
-    const store = STORE_MASTER[d.to_code] || {name: d.to_code || '—'};
-    const tBox = invs.reduce((a,i)=>a+(parseInt(i.box_count)||0),0);
-    const tQty = invs.reduce((a,i)=>a+(i.invoice_qty||0),0);
-
-    return `<div class="lr-card">
-    <div class="lr-flex">
-        <div class="lr-details">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px">
-                <div class="lr-num">LR: ${lr}</div><span class="badge" style="background:${c}22;color:${c}">${d.status}</span>
-            </div>
-            <div class="data-grid">
-                <div class="kv-item"><label>Store Name</label><b>${store.name}</b></div>
-                <div class="kv-item"><label>From WH</label><b>${d.from_code || '—'}</b></div>
-                <div class="kv-item"><label>LR Date</label><b>${d.lr_date || '—'}</b></div>
-                <div class="kv-item"><label>Delivery Date</label><b>${delDate}</b></div>
-                <div class="kv-item"><label>Invoices</label><b>${invs.length}</b></div>
-                <div class="kv-item"><label>Total Boxes</label><b>${tBox}</b></div>
-            </div>
-        </div>
-        <div class="lr-preview">
-            ${d.photo_url ? `<div class="lr-thumb-wrap" onclick="zoomImg('${d.photo_url}')"><img class="lr-thumb" src="${d.photo_url}"><div class="zoom-btn">ZOOM 🔍</div></div>` : '<div style="font-size:10px; color:#6b7280; padding:40px; border:1px dashed #444; border-radius:10px; text-align:center">No Proof</div>'}
-        </div>
-    </div>
-    <div class="tbl-wrap"><table><thead><tr><th>Invoice</th><th>Order</th><th>Qty</th><th>Boxes</th></tr></thead><tbody>
-    ${invs.map(i=>`<tr><td>${i.invoice_no}</td><td>${i.order_no || '—'}</td><td>${i.invoice_qty}</td><td>${i.box_count || 0}</td></tr>`).join('')}
-    <tr class="row-total"><td colspan="2">TOTAL</td><td>${tQty}</td><td>${tBox}</td></tr></tbody></table></div></div>`;
+    const h = { lr: 'FROM_CODE,TO_CODE,INVOICE NO,ORDER NO.,INV DATE,TRANSPORTER NAME,LR -NO,LR DATE,VEHICLE NO,INVOICE QTY,INV VALUE,NO OF BOX\n', store: 'SAP STORE CODE,NAME,CITY,STATE,TYPE\n' };
+    const a=document.createElement('a'); a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(h[t]); a.download=`Format_${t}.csv`; a.click();
 }
 
 function compress(f){ return new Promise(res=>{ const r=new FileReader(); r.readAsDataURL(f); r.onload=e=>{ const i=new Image(); i.src=e.target.result; i.onload=()=>{ const c=document.createElement('canvas'); const w=800, s=w/i.width; c.width=w; c.height=i.height*s; c.getContext('2d').drawImage(i,0,0,c.width,c.height); c.toBlob(b=>res(b),'image/jpeg',0.6); } } }); }
+async function nuke(col){ if(confirm(`Purge all ${col}?`)){ const s=await db.collection(col).get(); const b=db.batch(); s.forEach(d=>b.delete(d.ref)); await b.commit(); toast('Cleared'); } }
 </script>
 </body>
 </html>

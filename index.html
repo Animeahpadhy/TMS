@@ -14,17 +14,14 @@ body{font-family:system-ui,sans-serif;background:#0f1117;color:#e8eaf6;min-heigh
 .box-title{font-size:.7rem;color:#6b7280;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;font-weight:700}
 .topbar{background:#1a1d27;border-bottom:1px solid #2e3248;padding:12px 20px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:200}
 .brand{font-weight:800;color:#6c63ff;font-size:1.1rem}
-.tabs{display:flex;gap:4px;background:#22263a;border-radius:10px;padding:4px;margin:12px 0}
-.tab{flex:1;padding:8px 4px;text-align:center;border:none;background:transparent;color:#6b7280;font-size:.8rem;font-weight:700;cursor:pointer;border-radius:7px}
-.tab.on{background:#6c63ff;color:#fff}
 .field{margin-bottom:12px}
 .field label{display:block;font-size:.65rem;color:#6b7280;margin-bottom:4px;text-transform:uppercase;font-weight:600}
 input,select{width:100%;background:#22263a;border:1px solid #2e3248;color:#e8eaf6;border-radius:8px;padding:10px;font-size:.9rem;outline:none}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:12px;border:none;border-radius:8px;font-size:.85rem;font-weight:700;cursor:pointer;transition:0.1s}
 .btn:disabled{opacity:0.5;cursor:not-allowed}
 .btn-full{width:100%}
-.btn-purple{background:#6c63ff;color:#fff}
 .btn-green{background:#10b981;color:#fff}
+.btn-purple{background:#6c63ff;color:#fff}
 .btn-gray{background:#22263a;color:#e8eaf6;border:1px solid #2e3248}
 .srow{display:flex;gap:8px}.srow input{flex:1}
 .lr-card{background:#1a1d27;border:1px solid #2e3248;border-radius:12px;padding:16px;margin-top:10px}
@@ -63,15 +60,15 @@ td{padding:8px;border-top:1px solid #2e3248;white-space:nowrap}
   <div class="topbar"><div><div class="brand">TMS</div><div class="role-tag" id="user-tag"></div></div><button class="logout" onclick="doLogout()">Logout</button></div>
   
   <div class="box">
-    <div class="box-title">Find Shipment</div>
+    <div class="box-title">Search Shipment</div>
     <div class="srow"><input id="srch-lr" placeholder="LR Number"/><button class="btn btn-gray" onclick="doSearch()">Search</button></div>
   </div>
 
   <div id="res-area"></div>
 
-  <!-- TRANSPORTER UPDATE SECTION -->
+  <!-- UPDATE SECTION -->
   <div id="trans-box" style="display:none" class="box">
-    <div class="box-title">Update Status</div>
+    <div class="box-title">Transporter Update</div>
     <select id="status-sel" onchange="checkDelivered()" style="margin-bottom:12px">
       <option value="In Transit">In Transit</option>
       <option value="Reached WH">Reached WH</option>
@@ -166,15 +163,23 @@ async function doUnifiedUpdate(){
   const st=$('status-sel').value;
   const btn=$('up-btn');
 
-  if(st==='Delivered' && !pBlob) return toast('Scan required for delivery','err');
+  if(st==='Delivered' && !pBlob) return toast('Image Required','err');
 
+  // 1. UI LOCK
   btn.disabled=true; 
   btn.textContent='Updating...';
+
+  // 2. SAFETY TIMEOUT (Force reset if Firebase hangs)
+  const timeoutId = setTimeout(() => {
+    btn.disabled=false;
+    btn.textContent='Confirm Update';
+    toast('Network Hang - Please Retry','err');
+  }, 12000);
 
   try {
     let upData = { status:st, last_updated:TS(), updated_by:CU.id };
     
-    // Perform uploads and database updates in parallel
+    // 3. PARALLEL EXECUTION
     const tasks = [];
     
     if(pBlob){
@@ -185,19 +190,21 @@ async function doUnifiedUpdate(){
       tasks.push(uploadTask);
     }
 
-    // Wait for the photo to finish uploading (if applicable) then update Firestore
+    // Wait for upload then update Firestore
     await Promise.all(tasks);
     await db.collection('lr_master').doc(lr).update(upData);
     
-    toast('Shipment Updated','ok');
+    clearTimeout(timeoutId);
+    toast('Success','ok');
     pBlob=null; 
     $('prev-box').style.display='none';
-    await doSearch(); // Refresh the view
+    await doSearch(); // Confirm visibility instantly
+    
   } catch(e) {
+    clearTimeout(timeoutId);
     console.error(e);
-    toast('Update failed. Check connection.','err');
+    toast('Update failed - Check connection','err');
   } finally {
-    // This finally block ensures the button always resets
     btn.disabled=false;
     btn.textContent='Confirm Update';
   }
@@ -207,7 +214,7 @@ function renderLR(lr,d,invs){
   const c=d.status==='Delivered'?'#10b981':'#f59e0b';
   return `<div class="lr-card">
     <div class="lr-head"><div class="lr-num">${lr}</div><span class="badge" style="background:${c}22;color:${c}">${d.status}</span></div>
-    <div class="grid2"><div class="kv"><span>Store</span><strong>${d.to_code}</strong></div><div class="kv"><span>LR Date</span><strong>${d.lr_date||'—'}</strong></div></div>
+    <div class="grid2"><div class="kv"><span>Store</span><strong>${d.to_code}</strong></div><div class="kv"><span>Date</span><strong>${d.lr_date||'—'}</strong></div></div>
     ${d.photo_url?`<div style="margin-top:10px"><img src="${d.photo_url}" style="width:100%;border-radius:8px;border:1px solid #2e3248"/></div>`:''}
     <div class="tbl-wrap"><table><thead><tr><th>Invoice</th><th>Qty</th></tr></thead><tbody>
     ${invs.map(i=>`<tr><td>${i.invoice_no}</td><td>${i.invoice_qty}</td></tr>`).join('')}</tbody></table></div>

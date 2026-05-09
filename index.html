@@ -201,12 +201,17 @@ tr:hover td{background:#1e2235}
       <div class="box">
         <div class="box-title">Upload LR Copy Photo</div>
         <div id="curr-photo" style="margin-bottom:10px"></div>
-        <div class="drop" style="padding:14px">
-          <input type="file" id="photo-file" accept="image/*" capture="environment"/>
-          <div class="drop-icon" style="font-size:1.5rem">📷</div>
-          <div class="drop-text" style="font-size:.78rem">Tap to capture or choose from gallery<br><span style="color:#00d4aa;font-size:.7rem">Auto compressed to &lt;200KB</span></div>
+        <div style="display:flex;gap:8px;margin-bottom:10px">
+          <button class="btn btn-gray" style="flex:1;padding:14px" onclick="triggerCamera()">📷 Take Photo</button>
+          <button class="btn btn-gray" style="flex:1;padding:14px" onclick="triggerGallery()">🖼 Gallery</button>
         </div>
-        <button class="btn btn-teal btn-full" style="margin-top:8px" onclick="doPhotoUpload()">Upload LR Copy</button>
+        <input type="file" id="photo-file" accept="image/*" capture="environment" style="display:none" onchange="doPhotoUpload()"/>
+        <input type="file" id="photo-gallery" accept="image/*" style="display:none" onchange="doPhotoUploadFromInput('photo-gallery')"/>
+        <div id="photo-preview" style="display:none;margin-bottom:8px;text-align:center">
+          <img id="photo-preview-img" style="max-width:100%;max-height:200px;border-radius:8px;border:1px solid #2e3248"/>
+          <div style="font-size:.75rem;color:#6b7280;margin-top:4px" id="photo-size-label"></div>
+        </div>
+        <button class="btn btn-teal btn-full" id="btn-upload-photo" style="display:none" onclick="doPhotoUploadFinal()">⬆ Upload This Photo</button>
       </div>
     </div>
   </div>
@@ -774,7 +779,9 @@ async function doStatusUpdate(){
   const status=$('trans-status').value;
   if(status==='Delivered'){
     const hasPhoto=$('curr-photo').querySelector('img');
-    if(!hasPhoto){toast('Please upload LR copy photo before marking Delivered','warn');return;}
+    if(!hasPhoto){
+      if(!confirm('No LR copy photo uploaded yet.\nMark as Delivered anyway?')){return;}
+    }
   }
   try{
     await db.collection('lr_master').doc(lr).update({status,last_updated:TS(),updated_by:CU.username});
@@ -783,7 +790,67 @@ async function doStatusUpdate(){
   }catch(e){toast('Error: '+e.message,'err');}
 }
 
+// Camera / Gallery triggers
+function triggerCamera(){
+  const input=$('photo-file');
+  input.setAttribute('capture','environment');
+  input.click();
+}
+function triggerGallery(){
+  $('photo-gallery').click();
+}
+
+// Store compressed blob globally
+let pendingPhotoBlob=null;
+
+async function showPhotoPreview(file){
+  if(!file)return;
+  try{
+    toast('Compressing…');
+    const blob=await compressImg(file,800,.7);
+    pendingPhotoBlob=blob;
+    const sizeKB=Math.round(blob.size/1024);
+    const url=URL.createObjectURL(blob);
+    $('photo-preview-img').src=url;
+    $('photo-size-label').textContent='Size: '+sizeKB+'KB (compressed)';
+    $('photo-preview').style.display='';
+    $('btn-upload-photo').style.display='';
+    toast('Photo ready — tap Upload','ok');
+  }catch(e){toast('Preview error: '+e.message,'err');}
+}
+
+async function doPhotoUploadFromInput(inputId){
+  const file=$(inputId).files[0];
+  if(file)showPhotoPreview(file);
+}
+
+async function doPhotoUploadFinal(){
+  if(!pendingPhotoBlob){toast('No photo selected','err');return;}
+  const lr=$('trans-actions').dataset.lr;
+  const btn=$('btn-upload-photo');
+  btn.disabled=true;btn.textContent='Uploading…';
+  try{
+    const sizeKB=Math.round(pendingPhotoBlob.size/1024);
+    toast('Uploading '+sizeKB+'KB…');
+    const ref=ST.ref('lr_copies/'+lr+'_'+Date.now()+'.jpg');
+    await ref.put(pendingPhotoBlob);
+    const url=await ref.getDownloadURL();
+    await db.collection('lr_master').doc(lr).update({photo_url:url,photo_uploaded_at:TS(),last_updated:TS()});
+    $('curr-photo').innerHTML='<img src="'+url+'" class="photo-thumb"/><br><a href="'+url+'" target="_blank" style="color:#00d4aa;font-size:.78rem">View full size</a>';
+    $('photo-preview').style.display='none';
+    $('btn-upload-photo').style.display='none';
+    pendingPhotoBlob=null;
+    toast('Photo uploaded ('+sizeKB+'KB)!','ok');
+  }catch(e){toast('Upload error: '+e.message,'err');}
+  btn.disabled=false;btn.textContent='⬆ Upload This Photo';
+}
+
 async function doPhotoUpload(){
+  const file=$('photo-file').files[0];
+  if(file)showPhotoPreview(file);
+}
+
+async function doPhotoUpload_old(){
   const lr=$('trans-actions').dataset.lr;
   const file=$('photo-file').files[0];
   if(!file){toast('Select a photo','err');return;}

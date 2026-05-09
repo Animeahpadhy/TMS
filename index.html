@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>TMS — Enterprise Logistics Hub</title>
+<title>TMS — Transport Management System</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:system-ui,sans-serif;background:#0f1117;color:#e8eaf6;min-height:100vh;font-size:14px}
 .center{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
 .card{background:#1a1d27;border:1px solid #2e3248;border-radius:16px;padding:28px;width:100%;max-width:400px}
-.page{display:none;max-width:1000px;margin:0 auto;padding:16px 16px 100px}
+.page{display:none;max-width:1100px;margin:0 auto;padding:16px 16px 100px}
 .box{background:#1a1d27;border:1px solid #2e3248;border-radius:12px;padding:16px;margin-bottom:14px}
 .box-title{font-size:.72rem;color:#6b7280;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;font-weight:700}
 .topbar{background:#1a1d27;border-bottom:1px solid #2e3248;padding:12px 20px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:200}
@@ -20,44 +20,33 @@ body{font-family:system-ui,sans-serif;background:#0f1117;color:#e8eaf6;min-heigh
 input,select{width:100%;background:#22263a;border:1px solid #2e3248;color:#e8eaf6;border-radius:8px;padding:10px;font-size:.9rem;outline:none}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 18px;border:none;border-radius:8px;font-size:.88rem;font-weight:700;cursor:pointer}
 .btn-full{width:100%}.btn-green{background:#10b981;color:#fff}.btn-purple{background:#6c63ff;color:#fff}.btn-gray{background:#22263a;color:#e8eaf6;border:1px solid #2e3248}
-.srow{display:flex;gap:8px}.srow input{flex:1}
 
-/* PRO-LEVEL LR CARD LAYOUT */
-.lr-card{background:#1a1d27;border:1px solid #33364d;border-radius:16px;padding:24px;margin-top:15px;position:relative}
-.lr-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
-.lr-title{font-size:1.3rem;font-weight:800;color:#00d4aa;font-family:monospace}
-.lr-sub-header{font-size:11px;color:#6b7280;margin-bottom:15px}
-.status-badge{background:#f59e0b22;color:#f59e0b;font-size:10px;font-weight:800;padding:4px 12px;border-radius:20px;text-transform:uppercase}
+/* SPLIT LAYOUT FOR SEARCH RESULT */
+.lr-card{background:#1a1d27;border:1px solid #2e3248;border-radius:12px;padding:20px;margin-top:10px}
+.lr-flex{display:flex;gap:20px;justify-content:space-between;align-items:flex-start}
+.lr-details{flex:1}.lr-num{font-size:1.2rem;font-weight:800;color:#00d4aa;font-family:monospace}
+.badge{font-size:.7rem;font-weight:800;padding:4px 10px;border-radius:20px;text-transform:uppercase}
 
-.overdue-banner{background:#ef444415;border:1px solid #ef444444;color:#ef4444;padding:10px 15px;border-radius:10px;font-size:12px;margin-bottom:20px;display:flex;align-items:center;gap:8px}
-.overdue-banner b{font-weight:800}
+/* GRID FOR KEY SHIPMENT DATA */
+.data-grid{display:grid;grid-template-columns:repeat(auto-fit, minmax(140px, 1fr));gap:15px;margin:20px 0}
+.kv-item label{display:block;font-size:10px;color:#6b7280;text-transform:uppercase;font-weight:600;margin-bottom:2px}
+.kv-item b{display:block;font-size:13px;color:#e8eaf6}
 
-.lr-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px}
-.kv-pair label{display:block;font-size:10px;color:#6b7280;text-transform:uppercase;font-weight:600;margin-bottom:4px}
-.kv-pair span{display:block;font-size:14px;font-weight:800;color:#e8eaf6}
-
-.upload-info{font-size:11px;color:#6b7280;margin-bottom:15px;display:flex;align-items:center;gap:6px}
-
-/* SIDE-BY-SIDE LAYOUT */
-.lr-flex-body{display:flex;gap:24px;align-items:flex-start}
-.lr-main-content{flex:1}
-.lr-photo-side{width:180px;text-align:right}
-
-.photo-box{border:2px solid #2e3248;border-radius:12px;overflow:hidden;background:#0f1117;cursor:zoom-in;transition:0.2s}
-.photo-box:hover{border-color:#6c63ff}
-.photo-img{width:100%;height:130px;object-fit:cover;display:block}
-.photo-footer{background:#6c63ff;color:white;font-size:9px;font-weight:800;padding:4px;text-align:center}
-
-.tbl-wrap{overflow-x:auto;border-radius:10px;border:1px solid #2e3248;margin-top:15px;background:#22263a33}
-table{width:100%;border-collapse:collapse;font-size:11px}
-th{background:#22263a;padding:12px 10px;text-align:left;color:#6b7280;text-transform:uppercase;font-size:9px;letter-spacing:1px}
-td{padding:12px 10px;border-top:1px solid #2e3248}
-.row-total{background:#22263a;font-weight:800;color:#fff}
+.lr-preview{width:180px;text-align:right}
+.lr-thumb-wrap{border:2px solid #2e3248;border-radius:10px;overflow:hidden;cursor:zoom-in;background:#000}
+.lr-thumb{width:100%;height:120px;object-fit:cover;display:block}
+.zoom-btn{background:#6c63ff;color:#fff;font-size:9px;font-weight:800;padding:4px;text-align:center}
 
 #zoom-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.95);z-index:2000;align-items:center;justify-content:center;cursor:zoom-out}
-#zoom-img{max-width:95%;max-height:90vh;border-radius:10px}
+#zoom-img{max-width:95%;max-height:95vh;border-radius:8px}
 
-.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(30px);background:#1a1d27;border:1px solid #2e3248;color:#e8eaf6;padding:12px 24px;border-radius:8px;font-size:.83rem;opacity:0;transition:.3s;z-index:9999}
+.tbl-wrap{overflow-x:auto;border-radius:8px;border:1px solid #2e3248;margin-top:10px}
+table{width:100%;border-collapse:collapse;font-size:.75rem}
+th{background:#22263a;padding:10px;text-align:left;color:#6b7280;text-transform:uppercase}
+td{padding:10px;border-top:1px solid #2e3248;white-space:nowrap}
+.row-total{background:#22263a;font-weight:bold}
+
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(30px);background:#1a1d27;border:1px solid #2e3248;color:#e8eaf6;padding:10px 20px;border-radius:8px;font-size:.83rem;opacity:0;transition:.3s;z-index:9999;text-align:center}
 .toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
 </style>
 </head>
@@ -69,19 +58,16 @@ td{padding:12px 10px;border-top:1px solid #2e3248}
 <div id="pg-login" class="center">
   <div class="card">
     <div style="font-size:2.5rem;font-weight:900;color:#6c63ff;margin-bottom:4px">TMS</div>
-    <div style="color:#6b7280;font-size:.85rem;margin-bottom:24px">Logistics Hub Control</div>
+    <div style="color:#6b7280;font-size:.85rem;margin-bottom:24px">Supply Chain Control</div>
     <input id="inp-u" placeholder="Username" style="margin-bottom:12px"/>
     <input id="inp-p" type="password" placeholder="Password" style="margin-bottom:20px"/>
-    <button class="btn btn-purple btn-full" onclick="doLogin()">Login</button>
+    <button class="btn btn-purple btn-full" onclick="doLogin()">Secure Login</button>
   </div>
 </div>
 
 <!-- MAIN PAGE -->
 <div id="pg-main" class="page">
-  <div class="topbar">
-    <div class="brand">TMS</div>
-    <button style="background:none; border:none; color:#6b7280; cursor:pointer" onclick="location.reload()">Logout</button>
-  </div>
+  <div class="topbar"><div><div class="brand">TMS</div><div class="role-tag" id="user-tag"></div></div><button style="background:none; border:none; color:#6b7280; cursor:pointer" onclick="location.reload()">Logout</button></div>
   
   <div class="tabs">
     <button class="tab on" id="t-lr" onclick="showTab('lr')">🔍 Search</button>
@@ -91,28 +77,24 @@ td{padding:12px 10px;border-top:1px solid #2e3248}
   </div>
 
   <div id="sec-lr">
-    <div class="box">
-      <div class="box-title">Find shipment</div>
-      <div class="srow"><input id="srch-lr" placeholder="Enter LR Number"/><button class="btn btn-gray" onclick="doSearch()">Search</button></div>
-    </div>
+    <div class="box"><div class="box-title">Search Shipment</div><div style="display:flex; gap:8px"><input id="srch-lr" placeholder="Enter LR Number"/><button class="btn btn-gray" onclick="doSearch()">Search</button></div></div>
     <div id="res-area"></div>
-
-    <!-- UPDATE BOX -->
+    
+    <!-- RECORD UPDATE AREA -->
     <div id="action-box" style="display:none" class="box">
-        <div class="box-title" id="edit-title">EDIT LR</div>
-        <select id="status-sel" onchange="checkDelv()" style="margin-bottom:12px">
-            <option value="In Transit">In Transit</option><option value="Reached WH">Reached WH</option><option value="Out for Delivery">Out for Delivery</option><option value="Delivered">Delivered</option>
-        </select>
+        <div class="box-title">Record Update</div>
+        <select id="status-sel" onchange="checkDelv()" class="field" style="margin-bottom:15px"><option value="In Transit">In Transit</option><option value="Reached WH">Reached WH</option><option value="Out for Delivery">Out for Delivery</option><option value="Delivered">Delivered</option></select>
         <div id="photo-ui" style="display:none">
-            <button class="btn btn-gray btn-full" onclick="$('cam').click()" style="margin-bottom:10px">📷 Take LR Copy Photo</button>
-            <div id="prev-box" style="display:none; text-align:center"><img id="prev-img" style="max-width:100%; border-radius:8px; border:1px solid #10b981"/></div>
+            <div style="display:flex; gap:8px; margin-bottom:10px"><button class="btn btn-gray" style="flex:1" onclick="$('cam').click()">📷 Camera</button><button class="btn btn-gray" style="flex:1" onclick="$('gal').click()">🖼 Gallery</button></div>
+            <div id="prev-box" style="display:none; text-align:center; margin-bottom:15px"><img id="prev-img" style="max-width:100%; border-radius:8px; border:1px solid #10b981"/></div>
         </div>
-        <button class="btn btn-green btn-full" id="up-btn" onclick="doUnifiedUpdate()">Save Changes</button>
+        <button class="btn btn-green btn-full" onclick="doUnifiedUpdate()">Update Record</button>
     </div>
   </div>
 </div>
 
 <input type="file" id="cam" accept="image/*" capture="environment" style="display:none" onchange="handleImg(this)"/>
+<input type="file" id="gal" accept="image/*" style="display:none" onchange="handleImg(this)"/>
 
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
@@ -120,15 +102,15 @@ td{padding:12px 10px;border-top:1px solid #2e3248}
 
 <script>
 firebase.initializeApp({
-    apiKey: "AIzaSyAPu5_BwUEu_xXdpXkmOJbuErGCGYqBUeE",
-    authDomain: "wh-logistics-system.firebaseapp.com",
-    projectId: "wh-logistics-system",
-    storageBucket: "wh-logistics-system.firebasestorage.app",
-    messagingSenderId: "279467148642",
-    appId: "1:279467148642:web:c458996bca6c85ed33983b"
+    apiKey:"AIzaSyAPu5_BwUEu_xXdpXkmOJbuErGCGYqBUeE",
+    authDomain:"wh-logistics-system.firebaseapp.com",
+    projectId:"wh-logistics-system",
+    storageBucket:"wh-logistics-system.firebasestorage.app",
+    messagingSenderId:"279467148642",
+    appId:"1:279467148642:web:c458996bca6c85ed33983b"
 });
 const db=firebase.firestore(), ST=firebase.storage(), TS=()=>firebase.firestore.FieldValue.serverTimestamp(), $=id=>document.getElementById(id);
-let CU=null, pBlob=null, STORE_MASTER={};
+let CU=null, pBlob=null, STORE_MASTER={}, WH_MASTER={};
 
 function toast(m){ const el=$('toast'); el.textContent=m; el.classList.add('on'); setTimeout(()=>el.classList.remove('on'),3000); }
 
@@ -139,28 +121,38 @@ async function doLogin(){
         CU={id:u,...snap.data()};
         await loadMasters();
         $('pg-login').style.display='none'; $('pg-main').style.display='block';
-    } else alert('Invalid Login');
+    } else alert('Unauthorized');
 }
 
 async function loadMasters(){
-    const ss=await db.collection('store_master').get();
-    ss.forEach(d=>STORE_MASTER[d.id]=d.data());
+    const s = await db.collection('store_master').get();
+    s.forEach(d=>STORE_MASTER[d.id]=d.data());
+    // Assume Warehouse names are stored in a similar collection or logic
 }
+
+function showTab(t){ ['lr','up','ms','us'].forEach(x=>{ $(`t-${x}`).classList.toggle('on',x===t); }); }
 
 async function doSearch(){
     const lr=$('srch-lr').value.trim().toUpperCase(); if(!lr) return;
     const s=await db.collection('lr_master').doc(lr).get();
     if(!s.exists) return toast('LR Not Found');
     const d=s.data(), invs=await db.collection('invoices').where('lr_no','==',lr).get();
+    const invData = invs.docs.map(x=>x.data());
     
-    $('res-area').innerHTML=renderLR(lr,d,invs.docs.map(x=>x.data()));
+    // SMART DELIVERY DATE CALCULATION
+    let delDate = '—';
+    if(d.status === 'Delivered' || d.status === 'Store Confirmed'){
+        const tTs = d.photo_uploaded_at?.toDate ? d.photo_uploaded_at.toDate() : Infinity;
+        const sTs = d.confirmed_time?.toDate ? d.confirmed_time.toDate() : Infinity;
+        const earlier = new Date(Math.min(tTs, sTs));
+        if(earlier != Infinity) delDate = earlier.toLocaleDateString('en-IN') + ' ' + earlier.toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'});
+    }
+
+    $('res-area').innerHTML=renderLR(lr,d,invData,delDate);
     
     if(CU.role==='Admin' || CU.role==='Transporter' || CU.is_super){
-        $('action-box').style.display='block';
-        $('action-box').dataset.lr=lr;
-        $('edit-title').textContent = `EDIT LR · ${lr}`;
-        $('status-sel').value=d.status||'In Transit';
-        checkDelv();
+        $('action-box').style.display='block'; $('action-box').dataset.lr=lr;
+        $('status-sel').value=d.status||'In Transit'; checkDelv();
     }
 }
 
@@ -171,88 +163,56 @@ async function handleImg(inp){ const f=inp.files[0]; if(!f)return; pBlob=await c
 async function doUnifiedUpdate(){
     const lr=$('action-box').dataset.lr, st=$('status-sel').value;
     try {
-        let upData = { status:st, last_updated:TS(), updated_by:CU.id };
-        if(pBlob){
-            const ref=ST.ref(`lr_copies/${lr}.jpg`);
-            const snap=await ref.put(pBlob);
-            upData.photo_url=await snap.ref.getDownloadURL();
-        }
-        await db.collection('lr_master').doc(lr).update(upData);
-        toast('Record Updated'); doSearch();
-    } catch(e){ toast('Error updating'); }
+        let up={status:st, last_updated:TS(), updated_by:CU.id};
+        if(pBlob){ const ref=ST.ref(`lr_copies/${lr}.jpg`); const snap=await ref.put(pBlob); up.photo_url=await snap.ref.getDownloadURL(); up.photo_uploaded_at=TS(); }
+        await db.collection('lr_master').doc(lr).update(up); toast('Success'); doSearch();
+    } catch(e){ toast('Error'); }
 }
 
-function renderLR(lr,d,invs){
+function renderLR(lr,d,invs,delDate){
+    const c=d.status==='Delivered'?'#10b981':'#f59e0b';
     const store = STORE_MASTER[d.to_code] || {name: d.to_code || '—'};
-    const upTime = d.upload_time?.toDate ? d.upload_time.toDate().toLocaleString() : '—';
+    const totalBoxes = invs.reduce((a,i)=>a+(parseInt(i.box_count)||0),0);
     const totalQty = invs.reduce((a,i)=>a+(i.invoice_qty||0),0);
-    const totalVal = invs.reduce((a,i)=>a+(i.invoice_value||0),0);
-    const totalBoxes = invs.reduce((a,i)=>a+(i.box_count||0),0);
 
-    return `
-    <div class="lr-card">
-        <div class="lr-header">
-            <div>
-                <div class="lr-title">LR: ${lr}</div>
-                <div class="lr-sub-header">${d.transporter || '—'} · ${d.vehicle_no || '—'}</div>
+    return `<div class="lr-card">
+    <div class="lr-flex">
+        <div class="lr-details">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px">
+                <div class="lr-num">LR: ${lr}</div><span class="badge" style="background:${c}22;color:${c}">${d.status}</span>
             </div>
-            <span class="status-badge">${d.status}</span>
-        </div>
-
-        <div class="overdue-banner">
-            🔴 <b>OVERDUE by 58 days</b> | Expected: 12 Mar 2026 | Transit SLA: 4 days
-        </div>
-
-        <div class="lr-flex-body">
-            <div class="lr-main-content">
-                <div class="lr-grid">
-                    <div class="kv-pair"><label>Store Code</label><span>${d.to_code}</span></div>
-                    <div class="kv-pair"><label>Store Name</label><span>${store.name}</span></div>
-                    <div class="kv-pair"><label>From (WH)</label><span>${d.from_code || '—'}</span></div>
-                    <div class="kv-pair"><label>LR Date</label><span>${d.lr_date || '—'}</span></div>
-                    <div class="kv-pair"><label>Invoices</label><span>${invs.length}</span></div>
-                    <div class="kv-pair"><label>Total Boxes</label><span>${totalBoxes}</span></div>
-                </div>
-                <div class="upload-info">
-                    📅 UPLOADED: ${upTime} 🔒
-                </div>
-                <div style="font-size:11px; color:#6b7280; margin-bottom:8px">📷 ${d.photo_url ? 'LR copy proof attached' : 'No LR copy photo uploaded yet'}</div>
-            </div>
-            <div class="lr-photo-side">
-                ${d.photo_url ? `
-                <div class="photo-box" onclick="zoomImg('${d.photo_url}')">
-                    <img class="photo-img" src="${d.photo_url}">
-                    <div class="photo-footer">ZOOM 🔍</div>
-                </div>` : '<div style="font-size:10px; color:#6b7280; border:1px dashed #444; padding:20px; border-radius:8px">No Photo</div>'}
+            
+            <div class="data-grid">
+                <div class="kv-item"><label>Store Name</label><b>${store.name}</b></div>
+                <div class="kv-item"><label>From WH</label><b>${d.from_code || '—'}</b></div>
+                <div class="kv-item"><label>LR Date</label><b>${d.lr_date || '—'}</b></div>
+                <div class="kv-item"><label>Delivery Date</label><b>${delDate}</b></div>
+                <div class="kv-item"><label>No. of Invoices</label><b>${invs.length}</b></div>
+                <div class="kv-item"><label>Total Boxes</label><b>${totalBoxes}</b></div>
             </div>
         </div>
-
-        <div class="tbl-wrap">
-            <table>
-                <thead><tr><th>Invoice</th><th>Order</th><th>Store</th><th>Qty</th><th>Value</th><th>Boxes</th></tr></thead>
-                <tbody>
-                    ${invs.map(i=>`<tr><td>${i.invoice_no}</td><td>${i.order_no || '—'}</td><td>${store.name}</td><td>${i.invoice_qty}</td><td>₹${Number(i.invoice_value).toLocaleString('en-IN')}</td><td>${i.box_count}</td></tr>`).join('')}
-                    <tr class="row-total"><td colspan="3">TOTAL</td><td>${totalQty}</td><td>₹${Number(totalVal).toLocaleString('en-IN')}</td><td>${totalBoxes}</td></tr>
-                </tbody>
-            </table>
+        
+        <div class="lr-preview">
+            ${d.photo_url ? `
+            <div class="lr-thumb-wrap" onclick="zoomImg('${d.photo_url}')">
+                <img class="lr-thumb" src="${d.photo_url}">
+                <div class="zoom-btn">ZOOM 🔍</div>
+            </div>` : '<div style="font-size:10px; color:#6b7280; padding:40px; border:1px dashed #444; border-radius:10px; text-align:center">No Photo Proof</div>'}
         </div>
-    </div>`;
+    </div>
+    
+    <div class="tbl-wrap">
+        <table>
+            <thead><tr><th>Invoice</th><th>Order</th><th>Qty</th><th>Boxes</th></tr></thead>
+            <tbody>
+                ${invs.map(i=>`<tr><td>${i.invoice_no}</td><td>${i.order_no || '—'}</td><td>${i.invoice_qty}</td><td>${i.box_count || 0}</td></tr>`).join('')}
+                <tr class="row-total"><td colspan="2">TOTAL</td><td>${totalQty}</td><td>${totalBoxes}</td></tr>
+            </tbody>
+        </table>
+    </div></div>`;
 }
 
-function compress(f){
-    return new Promise(res=>{
-        const r=new FileReader(); r.readAsDataURL(f);
-        r.onload=e=>{
-            const i=new Image(); i.src=e.target.result;
-            i.onload=()=>{
-                const c=document.createElement('canvas');
-                const w=800, s=w/i.width; c.width=w; c.height=i.height*s;
-                c.getContext('2d').drawImage(i,0,0,c.width,c.height);
-                c.toBlob(b=>res(b),'image/jpeg',0.6);
-            }
-        }
-    });
-}
+function compress(f){ return new Promise(res=>{ const r=new FileReader(); r.readAsDataURL(f); r.onload=e=>{ const i=new Image(); i.src=e.target.result; i.onload=()=>{ const c=document.createElement('canvas'); const w=800, s=w/i.width; c.width=w; c.height=i.height*s; c.getContext('2d').drawImage(i,0,0,c.width,c.height); c.toBlob(b=>res(b),'image/jpeg',0.6); } } }); }
 </script>
 </body>
 </html>

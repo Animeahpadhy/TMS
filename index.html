@@ -842,24 +842,31 @@ async function doPhotoUploadFromInput(inputId){
 
 async function doPhotoUploadFinal(){
   if(!pendingPhotoBlob){toast('No photo selected','err');return;}
-  const lr=$('trans-actions').dataset.lr;
+  const currentLR=$('trans-actions').dataset.lr;
   const btn=$('btn-upload-photo');
   btn.disabled=true;btn.textContent='Uploading…';
   try{
     const sizeKB=Math.round(pendingPhotoBlob.size/1024);
     toast('Uploading '+sizeKB+'KB…');
-    const ref=ST.ref('lr_copies/'+lr+'_'+Date.now()+'.jpg');
+    const ref=ST.ref('lr_copies/'+currentLR+'_'+Date.now()+'.jpg');
     await ref.put(pendingPhotoBlob);
     const url=await ref.getDownloadURL();
-    await db.collection('lr_master').doc(lr).update({photo_url:url,photo_uploaded_at:TS(),last_updated:TS()});
-    $('curr-photo').innerHTML='<img src="'+url+'" class="photo-thumb"/><br><a href="'+url+'" target="_blank" style="color:#00d4aa;font-size:.78rem">View full size</a>';
+    await db.collection('lr_master').doc(currentLR).update({
+      photo_url:url,
+      photo_uploaded_at:TS(),
+      last_updated:TS()
+    });
+    $('curr-photo').innerHTML=`
+      <div style="margin-bottom:6px;font-size:.75rem;color:#10b981;font-weight:700">✅ LR Copy uploaded (${sizeKB}KB)</div>
+      <a href="${url}" target="_blank">
+        <img src="${url}" style="max-width:100%;max-height:220px;border-radius:8px;border:1px solid #2e3248;display:block"/>
+      </a>
+      <div style="margin-top:4px;font-size:.72rem;color:#6b7280">Tap to view full size</div>`;
     $('photo-preview').style.display='none';
     $('btn-upload-photo').style.display='none';
     pendingPhotoBlob=null;
     toast('Photo uploaded ('+sizeKB+'KB)!','ok');
-    // Refresh LR card to show photo
-    const lr=$('trans-actions').dataset.lr;
-    if(lr)setTimeout(()=>doTransSearch(),1000);
+    if(currentLR)setTimeout(()=>doTransSearch(),1000);
   }catch(e){toast('Upload error: '+e.message,'err');}
   btn.disabled=false;btn.textContent='⬆ Upload This Photo';
 }
@@ -1379,10 +1386,26 @@ function lrCard(lr,d,invs,showTime,showConfirm,totals){
       <div class="kv"><span>LR Date</span><strong>${d.lr_date||'—'}</strong></div>
       <div class="kv"><span>Invoices</span><strong>${invs.length||d.invoice_count||'—'}</strong></div>
       <div class="kv"><span>Total Boxes</span><strong>${totalBoxes}</strong></div>
-      ${d.photo_url?`<div class="kv"><span>LR Copy</span><a href="${d.photo_url}" target="_blank" style="color:#00d4aa;font-size:.85rem">📷 View Photo</a></div>`:''}
       ${showTime&&ut?`<div class="kv"><span>Uploaded</span><strong>${ut.toLocaleString('en-IN')} ${locked?'🔒':'🔓'}</strong></div>`:''}
     </div>
-    ${d.photo_url?`<img src="${d.photo_url}" class="photo-thumb" style="max-width:200px"/>`:'' }
+    ${d.photo_url?`
+      <div style="margin-top:14px;padding-top:14px;border-top:1px solid #2e3248">
+        <div style="font-size:.72rem;color:#10b981;font-weight:700;margin-bottom:8px">📷 LR COPY PHOTO</div>
+        <a href="${d.photo_url}" target="_blank" rel="noopener">
+          <img src="${d.photo_url}"
+            style="width:100%;max-height:350px;object-fit:contain;border-radius:10px;border:1px solid #10b98144;display:block;background:#0d1117;cursor:zoom-in"
+            onerror="this.style.display='none';document.getElementById('photo-fallback-${lr}').style.display='block'"
+          />
+        </a>
+        <div id="photo-fallback-${lr}" style="display:none;padding:12px;text-align:center;background:#f59e0b15;border-radius:8px;margin-top:6px">
+          <div style="color:#f59e0b;margin-bottom:6px;font-size:.82rem">Image blocked — tap link below</div>
+          <a href="${d.photo_url}" target="_blank" style="color:#00d4aa;font-weight:700">📷 Open LR Copy Photo</a>
+        </div>
+        <div style="margin-top:6px;text-align:center">
+          <a href="${d.photo_url}" target="_blank" rel="noopener" style="color:#00d4aa;font-size:.78rem">Open full size ↗</a>
+        </div>
+      </div>`
+    :'<div style="margin-top:10px;padding-top:10px;border-top:1px solid #2e3248;font-size:.78rem;color:#6b7280">📷 No LR copy photo uploaded yet</div>'}
     ${invHtml}
     ${receiptHtml}
     ${confirmBtn}

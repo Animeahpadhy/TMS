@@ -44,31 +44,38 @@ td{padding:8px;border-top:1px solid #2e3248;white-space:nowrap}
 <body>
 <div id="toast" class="toast"></div>
 
+<!-- LOGIN PAGE -->
 <div id="pg-login" class="center">
   <div class="card">
     <div style="font-size:2rem;font-weight:900;color:#6c63ff;margin-bottom:4px">TMS</div>
-    <div style="color:#6b7280;font-size:.8rem;margin-bottom:24px">Logistics Management</div>
+    <div style="color:#6b7280;font-size:.8rem;margin-bottom:24px">Transporter Portal</div>
     <div class="field"><label>Username</label><input id="inp-u" placeholder="Enter username"/></div>
     <div class="field"><label>Password</label><input id="inp-p" type="password" placeholder="Enter password"/></div>
     <button class="btn btn-purple btn-full" id="btn-login" onclick="doLogin()">Login</button>
   </div>
 </div>
 
+<!-- MAIN PAGE -->
 <div id="pg-main" class="page">
   <div class="topbar"><div><div class="brand">TMS</div><div class="role-tag" id="user-tag"></div></div><button class="logout" onclick="doLogout()">Logout</button></div>
+  
   <div class="box">
     <div class="box-title">Search Shipment</div>
     <div class="srow"><input id="srch-lr" placeholder="LR Number"/><button class="btn btn-gray" onclick="doSearch()">Search</button></div>
   </div>
+
   <div id="res-area"></div>
+
+  <!-- UPDATE SECTION -->
   <div id="trans-box" style="display:none" class="box">
-    <div class="box-title">Transporter Update</div>
+    <div class="box-title">Status Update</div>
     <select id="status-sel" onchange="checkDelivered()" style="margin-bottom:12px">
       <option value="In Transit">In Transit</option>
       <option value="Reached WH">Reached WH</option>
       <option value="Out for Delivery">Out for Delivery</option>
       <option value="Delivered">Delivered (Scan LR Copy)</option>
     </select>
+    
     <div id="photo-ui" style="display:none">
       <div style="display:flex; gap:8px; margin-bottom:10px">
         <button class="btn btn-gray" style="flex:1" onclick="$('cam').click()">📷 Take Photo</button>
@@ -79,6 +86,7 @@ td{padding:8px;border-top:1px solid #2e3248;white-space:nowrap}
         <div id="img-size" style="font-size:.7rem; color:#10b981; margin-top:4px; font-weight:bold"></div>
       </div>
     </div>
+
     <button class="btn btn-green btn-full" id="up-btn" onclick="doUnifiedUpdate()">Confirm Update</button>
   </div>
 </div>
@@ -126,6 +134,7 @@ async function doSearch(){
   if(!s.exists)return toast('Not Found','err');
   const d=s.data();
   const invs=await db.collection('invoices').where('lr_no','==',lr).get();
+  
   $('res-area').innerHTML=renderLR(lr,d,invs.docs.map(x=>x.data()));
   if(CU.role==='Transporter'){
     $('trans-box').style.display='block';
@@ -148,47 +157,42 @@ async function handleImg(inp){
   $('img-size').textContent=`Optimized: ${Math.round(pBlob.size/1024)}KB`;
 }
 
+// THE FASTER UNIFIED UPDATE
 async function doUnifiedUpdate(){
   const lr=$('trans-box').dataset.lr;
   const st=$('status-sel').value;
   const btn=$('up-btn');
+
   if(st==='Delivered' && !pBlob) return toast('Image Required','err');
 
-  btn.disabled=true; btn.textContent='Updating...';
-  let isDone = false;
-
-  const timeoutId = setTimeout(() => {
-    if(!isDone){
-      btn.disabled=false; btn.textContent='Confirm Update';
-      toast('Network Hang - Please check internet and retry','err');
-    }
-  }, 15000);
+  // 1. UI LOCK
+  btn.disabled=true; 
+  btn.textContent='Updating...';
 
   try {
     let upData = { status:st, last_updated:TS(), updated_by:CU.id };
     
+    // 2. PARALLEL EXECUTION
     if(pBlob){
       const ref=ST.ref(`lr_copies/${lr}_${Date.now()}.jpg`);
-      // Explicitly wait for storage upload to finish
       const snap = await ref.put(pBlob);
       upData.photo_url = await snap.ref.getDownloadURL();
     }
 
     await db.collection('lr_master').doc(lr).update(upData);
     
-    isDone = true;
-    clearTimeout(timeoutId);
-    toast('Shipment Updated Successfully','ok');
-    pBlob=null; $('prev-box').style.display='none';
-    doSearch();
+    toast('Success! LR Updated','ok');
+    pBlob=null; 
+    $('prev-box').style.display='none';
+    await doSearch(); // Instant refresh
+    
   } catch(e) {
-    isDone = true;
-    clearTimeout(timeoutId);
-    console.error("Update Error:", e);
-    // Show the actual error message to diagnose the issue
-    toast(`Error: ${e.message.split('.')[0]}`,'err');
+    console.error(e);
+    toast('Error: Check connection/rules','err');
   } finally {
-    btn.disabled=false; btn.textContent='Confirm Update';
+    // 3. ALWAYS RESET BUTTON
+    btn.disabled=false;
+    btn.textContent='Confirm Update';
   }
 }
 
@@ -212,7 +216,7 @@ function compress(f){
         const c=document.createElement('canvas');
         const w=800, scale=w/i.width; c.width=w; c.height=i.height*scale;
         c.getContext('2d').drawImage(i,0,0,c.width,c.height);
-        c.toBlob(b=>res(b),'image/jpeg',0.6);
+        c.toBlob(b=>res(b),'image/jpeg',0.5); // Quality 0.5 for extra speed
       }
     }
   });

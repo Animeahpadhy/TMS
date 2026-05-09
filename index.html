@@ -191,29 +191,75 @@ tr:hover td{background:#1e2235}
     </div>
     <div id="trans-result"></div>
     <div id="trans-actions" style="display:none">
-      <div class="box">
-        <div class="box-title">Update Delivery Status</div>
-        <select id="trans-status" style="margin-bottom:10px">
-          <option>In Transit</option><option>Reached WH</option><option>Out for Delivery</option><option>Delivered</option>
-        </select>
-        <button class="btn btn-green btn-full" onclick="doStatusUpdate()">Update Status</button>
+    <!-- STEP INDICATOR -->
+    <div style="display:flex;gap:0;margin-bottom:14px;border-radius:10px;overflow:hidden;border:1px solid #2e3248">
+      <div id="step1-ind" style="flex:1;padding:10px;text-align:center;font-size:.75rem;font-weight:700;background:#6c63ff;color:#fff">1 · STATUS</div>
+      <div id="step2-ind" style="flex:1;padding:10px;text-align:center;font-size:.75rem;font-weight:700;background:#22263a;color:#6b7280">2 · PHOTO</div>
+      <div id="step3-ind" style="flex:1;padding:10px;text-align:center;font-size:.75rem;font-weight:700;background:#22263a;color:#6b7280">3 · CONFIRM</div>
+    </div>
+
+    <!-- STEP 1: STATUS -->
+    <div id="trans-step1" class="box">
+      <div class="box-title">Step 1 — Update Status</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button class="btn btn-gray btn-full" style="justify-content:flex-start;padding:14px" onclick="selectStatus('In Transit')">
+          <span style="font-size:1.2rem">🚛</span><span>In Transit</span>
+        </button>
+        <button class="btn btn-gray btn-full" style="justify-content:flex-start;padding:14px" onclick="selectStatus('Reached WH')">
+          <span style="font-size:1.2rem">🏭</span><span>Reached WH</span>
+        </button>
+        <button class="btn btn-gray btn-full" style="justify-content:flex-start;padding:14px" onclick="selectStatus('Out for Delivery')">
+          <span style="font-size:1.2rem">📦</span><span>Out for Delivery</span>
+        </button>
+        <button class="btn btn-green btn-full" style="justify-content:flex-start;padding:14px" onclick="selectStatus('Delivered')">
+          <span style="font-size:1.2rem">✅</span><span>Delivered — Upload LR Copy</span>
+        </button>
       </div>
-      <div class="box">
-        <div class="box-title">Upload LR Copy Photo</div>
-        <div id="curr-photo" style="margin-bottom:10px"></div>
-        <div style="display:flex;gap:8px;margin-bottom:10px">
-          <button class="btn btn-gray" style="flex:1;padding:14px" onclick="triggerCamera()">📷 Take Photo</button>
-          <button class="btn btn-gray" style="flex:1;padding:14px" onclick="triggerGallery()">🖼 Gallery</button>
-        </div>
-        <input type="file" id="photo-file" accept="image/*" capture="environment" style="display:none" onchange="doPhotoUpload()"/>
-        <input type="file" id="photo-gallery" accept="image/*" style="display:none" onchange="doPhotoUploadFromInput('photo-gallery')"/>
-        <div id="photo-preview" style="display:none;margin-bottom:8px;text-align:center">
-          <img id="photo-preview-img" style="max-width:100%;max-height:200px;border-radius:8px;border:1px solid #2e3248"/>
-          <div style="font-size:.75rem;color:#6b7280;margin-top:4px" id="photo-size-label"></div>
-        </div>
-        <button class="btn btn-teal btn-full" id="btn-upload-photo" style="display:none" onclick="doPhotoUploadFinal()">⬆ Upload This Photo</button>
+      <div id="selected-status-show" style="display:none;margin-top:10px;padding:10px;background:#6c63ff22;border-radius:8px;border:1px solid #6c63ff44;text-align:center">
+        <span style="color:#6c63ff;font-weight:700" id="selected-status-text"></span>
+        <button class="btn btn-gray btn-sm" style="margin-left:10px" onclick="changeStatus()">Change</button>
+        <button class="btn btn-purple btn-sm" style="margin-left:6px" onclick="goToStep(2)">Next →</button>
       </div>
     </div>
+
+    <!-- STEP 2: PHOTO (shown after selecting Delivered, optional for others) -->
+    <div id="trans-step2" class="box" style="display:none">
+      <div class="box-title">Step 2 — Upload LR Copy Photo</div>
+      <div id="curr-photo" style="margin-bottom:10px"></div>
+      <div style="display:flex;gap:8px;margin-bottom:10px">
+        <button class="btn btn-gray" style="flex:1;padding:14px" onclick="triggerCamera()">📷 Take Photo</button>
+        <button class="btn btn-gray" style="flex:1;padding:14px" onclick="triggerGallery()">🖼 Gallery</button>
+      </div>
+      <input type="file" id="photo-file" accept="image/*" capture="environment" style="display:none" onchange="doPhotoUpload()"/>
+      <input type="file" id="photo-gallery" accept="image/*" style="display:none" onchange="doPhotoUploadFromInput('photo-gallery')"/>
+      <div id="photo-preview" style="display:none;margin-bottom:10px;text-align:center">
+        <img id="photo-preview-img" style="max-width:100%;max-height:220px;border-radius:8px;border:1px solid #2e3248"/>
+        <div style="font-size:.75rem;color:#10b981;margin-top:4px;font-weight:700" id="photo-size-label"></div>
+        <button class="btn btn-green btn-full" id="btn-upload-photo" style="margin-top:8px" onclick="doPhotoUploadFinal()">⬆ Upload LR Copy Photo</button>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:6px">
+        <button class="btn btn-gray" style="flex:1" onclick="goToStep(1)">← Back</button>
+        <button class="btn btn-purple" style="flex:2" id="btn-next-step3" onclick="goToStep(3)">Next → Confirm</button>
+      </div>
+    </div>
+
+    <!-- STEP 3: CONFIRM -->
+    <div id="trans-step3" class="box" style="display:none">
+      <div class="box-title">Step 3 — Confirm Update</div>
+      <div style="background:#22263a;border-radius:10px;padding:14px;margin-bottom:14px">
+        <div style="font-size:.78rem;color:#6b7280;margin-bottom:4px">LR Number</div>
+        <div style="font-family:monospace;font-size:1rem;color:#00d4aa;font-weight:700" id="confirm-lr-no"></div>
+        <div style="margin-top:10px;font-size:.78rem;color:#6b7280;margin-bottom:4px">New Status</div>
+        <div style="font-size:1rem;font-weight:700;color:#e8eaf6" id="confirm-status"></div>
+        <div style="margin-top:10px;font-size:.78rem;color:#6b7280;margin-bottom:4px">LR Copy Photo</div>
+        <div id="confirm-photo-status" style="font-size:.88rem;font-weight:700"></div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-gray" style="flex:1" onclick="goToStep(2)">← Back</button>
+        <button class="btn btn-green" style="flex:2" id="btn-final-update" onclick="doFinalUpdate()">✅ Confirm & Update</button>
+      </div>
+    </div>
+  </div>
   </div>
   <div id="tp-dl" style="display:none">
     <div class="box">
@@ -681,11 +727,33 @@ async function doWHSearch(){
     const s=await db.collection('lr_master').doc(lr).get();
     if(!s.exists){toast('LR not found','err');$('wh-result').innerHTML='';return;}
     const d=s.data();
+    // Auto-fix store_name if it's just a code
+    await autoFixStoreName(lr,d);
+    const updated=(await db.collection('lr_master').doc(lr).get()).data();
     const invs=(await db.collection('invoices').where('lr_no','==',lr).get()).docs.map(x=>x.data());
-    $('wh-result').innerHTML=lrCard(lr,d,invs,true,false);
-    // Scroll to result
+    $('wh-result').innerHTML=lrCard(lr,updated,invs,true,false);
     setTimeout(()=>$('wh-result').scrollIntoView({behavior:'smooth',block:'start'}),100);
   }catch(e){toast('Error: '+e.message,'err');}
+}
+
+async function autoFixStoreName(lr,d){
+  try{
+    const code=String(d.to_code||'').trim();
+    const store=STORE_MASTER[code]||STORE_MASTER[parseInt(code)];
+    if(!store)return;
+    const updates={};
+    // Fix store_name if it's just the code
+    if(!d.store_name||d.store_name===code||d.store_name===d.to_code){
+      updates.store_name=store.name;
+    }
+    // Fix store_city if blank
+    if(!d.store_city&&store.city){
+      updates.store_city=store.city;
+    }
+    if(Object.keys(updates).length>0){
+      await db.collection('lr_master').doc(lr).update({...updates,last_updated:TS()});
+    }
+  }catch(e){} // silent fail
 }
 
 async function doWHDownload(){
@@ -773,7 +841,10 @@ async function doTransSearch(){
     const d=s.data();
     const invs=(await db.collection('invoices').where('lr_no','==',lr).get()).docs.map(x=>x.data());
     $('trans-result').innerHTML=lrCard(lr,d,invs,false,false);
-    $('trans-status').value=d.status||'In Transit';
+    // Reset step flow
+    selectedStatus='';photoUploaded=false;
+    changeStatus();
+    goToStep(1);
     $('trans-actions').style.display='';
     $('trans-actions').dataset.lr=lr;
     // Show existing photo if available
@@ -805,6 +876,94 @@ async function doStatusUpdate(){
     doTransSearch();
   }catch(e){toast('Error: '+e.message,'err');}
 }
+
+// ══════════════════════════════════════════
+// TRANSPORTER STEP FLOW
+// ══════════════════════════════════════════
+let selectedStatus = '';
+let photoUploaded = false;
+
+function selectStatus(status){
+  selectedStatus = status;
+  $('selected-status-text').textContent = status;
+  $('selected-status-show').style.display = '';
+  // Hide the buttons
+  $('trans-step1').querySelectorAll('.btn-gray,.btn-green').forEach(b=>{
+    if(!b.closest('#selected-status-show'))b.style.display='none';
+  });
+  // If Delivered → go straight to photo step
+  if(status === 'Delivered'){
+    setTimeout(()=>goToStep(2), 400);
+  }
+}
+
+function changeStatus(){
+  selectedStatus = '';
+  $('selected-status-show').style.display = 'none';
+  $('trans-step1').querySelectorAll('.btn-gray,.btn-green').forEach(b=>{
+    if(!b.closest('#selected-status-show'))b.style.display='';
+  });
+}
+
+function goToStep(step){
+  // Update indicators
+  ['step1-ind','step2-ind','step3-ind'].forEach((id,i)=>{
+    const el=$(id);
+    if(el){
+      el.style.background = i+1===step ? '#6c63ff' : i+1<step ? '#10b981' : '#22263a';
+      el.style.color = i+1<=step ? '#fff' : '#6b7280';
+    }
+  });
+  // Show/hide steps
+  $('trans-step1').style.display = step===1 ? '' : 'none';
+  $('trans-step2').style.display = step===2 ? '' : 'none';
+  $('trans-step3').style.display = step===3 ? '' : 'none';
+
+  // Fill confirm page
+  if(step===3){
+    const lr=$('trans-actions').dataset.lr;
+    $('confirm-lr-no').textContent = lr;
+    $('confirm-status').textContent = selectedStatus;
+    const photoEl=$('confirm-photo-status');
+    if(photoUploaded){
+      photoEl.innerHTML='<span style="color:#10b981">✅ Photo uploaded</span>';
+    } else {
+      photoEl.innerHTML='<span style="color:#f59e0b">⚠ No photo — will update status only</span>';
+    }
+  }
+}
+
+async function doFinalUpdate(){
+  const lr=$('trans-actions').dataset.lr;
+  if(!selectedStatus){toast('Select a status first','err');return;}
+  const btn=$('btn-final-update');
+  btn.disabled=true;btn.textContent='Updating…';
+  try{
+    await db.collection('lr_master').doc(lr).update({
+      status:selectedStatus,
+      last_updated:TS(),
+      updated_by:CU.username
+    });
+    toast('✅ '+selectedStatus+' updated!','ok');
+    // Reset and refresh
+    selectedStatus='';photoUploaded=false;
+    $('trans-actions').style.display='none';
+    $('trans-result').innerHTML='';
+    $('trans-lr').value='';
+    // Show success message
+    $('trans-result').innerHTML=`
+      <div class="box" style="border-color:#10b98166;background:#10b98110;text-align:center;padding:24px">
+        <div style="font-size:2rem;margin-bottom:8px">✅</div>
+        <div style="font-weight:700;color:#10b981;font-size:1rem">LR ${lr} Updated!</div>
+        <div style="color:#6b7280;font-size:.82rem;margin-top:6px">Status: ${selectedStatus}</div>
+        <button class="btn btn-gray btn-sm" style="margin-top:14px" onclick="$('trans-result').innerHTML='';$('trans-lr').value=''">Search Another LR</button>
+      </div>`;
+  }catch(e){toast('Error: '+e.message,'err');}
+  btn.disabled=false;btn.textContent='✅ Confirm & Update';
+}
+
+// Override doTransSearch to reset step flow
+const _origTransSearch = window.doTransSearch;
 
 // Camera / Gallery triggers
 function triggerCamera(){
@@ -866,7 +1025,9 @@ async function doPhotoUploadFinal(){
     $('btn-upload-photo').style.display='none';
     pendingPhotoBlob=null;
     toast('Photo uploaded ('+sizeKB+'KB)!','ok');
-    if(currentLR)setTimeout(()=>doTransSearch(),1000);
+    photoUploaded=true;
+    // Auto advance to confirm step
+    setTimeout(()=>goToStep(3),800);
   }catch(e){toast('Upload error: '+e.message,'err');}
   btn.disabled=false;btn.textContent='⬆ Upload This Photo';
 }
@@ -1028,7 +1189,9 @@ async function doAdminSearch(){
   try{
     const s=await db.collection('lr_master').doc(lr).get();
     if(!s.exists){toast('LR not found','err');$('admin-result').innerHTML='';return;}
-    const d=s.data();
+    await autoFixStoreName(lr,s.data());
+    const refreshed=await db.collection('lr_master').doc(lr).get();
+    const d=refreshed.data();
     const invSnap=await db.collection('invoices').where('lr_no','==',lr).get();
     const invs=invSnap.docs.map(x=>x.data());
     // Sum boxes

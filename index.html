@@ -165,10 +165,19 @@ tr:hover td{background:#1e2235}
     </div>
   </div>
   <div id="wp-dl" style="display:none">
-    <div class="box"><div class="box-title">Download LR Data</div>
+    <div class="box">
+      <div class="box-title">Full Report (Invoice Level)</div>
+      <div style="font-size:.72rem;color:#6b7280;margin-bottom:10px">One row per invoice · Includes SLA, delivery date, days taken, remark</div>
       <div class="field"><label>LR Date From</label><input type="date" id="wh-dl-from"/></div>
       <div class="field"><label>LR Date To</label><input type="date" id="wh-dl-to"/></div>
-      <button class="btn btn-teal btn-full" onclick="doDownload('wh')">⬇ Download CSV</button>
+      <button class="btn btn-teal btn-full" onclick="doDownload('wh')">⬇ Download Full Report</button>
+    </div>
+    <div class="box" style="margin-top:0">
+      <div class="box-title" style="color:#ef4444">🔴 Overdue Report</div>
+      <div style="font-size:.72rem;color:#6b7280;margin-bottom:10px">Only SLA breached LRs — share with transporter for priority delivery</div>
+      <div class="field"><label>LR Date From</label><input type="date" id="wh-ov-from"/></div>
+      <div class="field"><label>LR Date To</label><input type="date" id="wh-ov-to"/></div>
+      <button class="btn btn-red btn-full" onclick="doOverdueDownload('wh')">⬇ Download Overdue Report</button>
     </div>
   </div>
 </div>
@@ -313,10 +322,19 @@ tr:hover td{background:#1e2235}
       <button class="btn btn-green btn-full" id="btn-admin-up" style="margin-top:10px" onclick="doUpload('admin')">Upload LR Data</button>
       <div class="log" id="admin-log"></div>
     </div>
-    <div class="box"><div class="box-title">Download with Date Filter</div>
-      <div class="field"><label>From</label><input type="date" id="admin-dl-from"/></div>
-      <div class="field"><label>To</label><input type="date" id="admin-dl-to"/></div>
-      <button class="btn btn-teal btn-full" onclick="doDownload('admin')">⬇ Download CSV</button>
+    <div class="box">
+      <div class="box-title">Full Report (Invoice Level)</div>
+      <div style="font-size:.72rem;color:#6b7280;margin-bottom:10px">One row per invoice · Includes SLA, delivery date, days taken, remark</div>
+      <div class="field"><label>LR Date From</label><input type="date" id="admin-dl-from"/></div>
+      <div class="field"><label>LR Date To</label><input type="date" id="admin-dl-to"/></div>
+      <button class="btn btn-teal btn-full" onclick="doDownload('admin')">⬇ Download Full Report</button>
+    </div>
+    <div class="box" style="margin-top:0">
+      <div class="box-title" style="color:#ef4444">🔴 Overdue Report</div>
+      <div style="font-size:.72rem;color:#6b7280;margin-bottom:10px">Only SLA breached LRs sorted by overdue days — for transporter escalation</div>
+      <div class="field"><label>LR Date From</label><input type="date" id="admin-ov-from"/></div>
+      <div class="field"><label>LR Date To</label><input type="date" id="admin-ov-to"/></div>
+      <button class="btn btn-red btn-full" onclick="doOverdueDownload('admin')">⬇ Download Overdue Report</button>
     </div>
   </div>
 
@@ -518,7 +536,7 @@ async function loadStats(role){
       <div class="stat"><div class="stat-n">${total}</div><div class="stat-l">Total LRs</div></div>
       <div class="stat"><div class="stat-n" style="color:#f59e0b">${intransit}</div><div class="stat-l">In Transit</div></div>
       <div class="stat"><div class="stat-n" style="color:#10b981">${delivered}</div><div class="stat-l">Delivered</div></div>
-      <div class="stat"><div class="stat-n" style="color:#ef4444">${overdue}</div><div class="stat-l">🔴 Overdue</div></div>`;
+      <div class="stat" style="cursor:pointer;border-color:#ef444466" onclick="doOverdueDownload('admin')" title="Click to download overdue report"><div class="stat-n" style="color:#ef4444">${overdue}</div><div class="stat-l">🔴 Overdue ↓</div></div>`;
   }catch(e){}
 }
 
@@ -1103,14 +1121,130 @@ window.delUser=async function(u){
 async function doDownload(role){
   const fromId=role==='wh'?'wh-dl-from':role==='admin'?'admin-dl-from':'trans-dl-from';
   const toId=role==='wh'?'wh-dl-to':role==='admin'?'admin-dl-to':'trans-dl-to';
-  const from=$(fromId)?.value, to=$(toId)?.value;
+  const from=$(fromId)?.value||'', to=$(toId)?.value||'';
+  toast('Building report…');
   try{
-    const snap=await db.collection('lr_master').get();
-    let rows=snap.docs.map(d=>({lr_no:d.id,...flatData(d.data())}));
-    if(from)rows=rows.filter(r=>r.lr_date>=from);
-    if(to)rows=rows.filter(r=>r.lr_date<=to);
-    csvDl(rows,'TMS_Data.csv');toast(`Downloaded ${rows.length} records`,'ok');
+    const lrSnap=await db.collection('lr_master').get();
+    let allRows=[];
+    for(const doc of lrSnap.docs){
+      const d=doc.data(), lr=doc.id;
+      if(from&&d.lr_date&&d.lr_date<from)continue;
+      if(to&&d.lr_date&&d.lr_date>to)continue;
+      const invSnap=await db.collection('invoices').where('lr_no','==',lr).get();
+      const invs=invSnap.docs.map(x=>x.data());
+      const rows=buildDownloadRows(lr,d,invs);
+      allRows=allRows.concat(rows);
+    }
+    csvDl(allRows,'TMS_Full_Report.csv');
+    toast(`Downloaded ${allRows.length} invoice rows`,'ok');
   }catch(e){toast('Error: '+e.message,'err');}
+}
+
+async function doOverdueDownload(role){
+  const fromId=role==='wh'?'wh-ov-from':'admin-ov-from';
+  const toId=role==='wh'?'wh-ov-to':'admin-ov-to';
+  const from=$(fromId)?.value||'', to=$(toId)?.value||'';
+  toast('Building overdue report…');
+  try{
+    const lrSnap=await db.collection('lr_master').get();
+    let allRows=[];
+    for(const doc of lrSnap.docs){
+      const d=doc.data(), lr=doc.id;
+      if(d.status==='Delivered'||d.status==='Store Confirmed')continue;
+      if(from&&d.lr_date&&d.lr_date<from)continue;
+      if(to&&d.lr_date&&d.lr_date>to)continue;
+      const ov=overdueInfo(d.lr_date,d.wh_code||d.from_code,d.to_code);
+      if(!ov||ov.diffDays<=0)continue; // only overdue
+      const invSnap=await db.collection('invoices').where('lr_no','==',lr).get();
+      const invs=invSnap.docs.map(x=>x.data());
+      const rows=buildDownloadRows(lr,d,invs);
+      allRows=allRows.concat(rows);
+    }
+    // Sort by overdue days descending
+    allRows.sort((a,b)=>Number(String(b['OVERDUE DAYS']).replace(/\D/g,'')||0)-Number(String(a['OVERDUE DAYS']).replace(/\D/g,'')||0));
+    if(!allRows.length){toast('No overdue LRs found!','warn');return;}
+    csvDl(allRows,'TMS_Overdue_Report.csv');
+    toast(`🔴 ${allRows.length} overdue invoice rows downloaded`,'ok');
+  }catch(e){toast('Error: '+e.message,'err');}
+}
+
+// ── BUILD DOWNLOAD ROWS (one per invoice) ──
+function buildDownloadRows(lr,d,invs){
+  const storeCode=String(d.to_code||'').trim();
+  const storeLookup=SM?.[storeCode]||SM?.[parseInt(storeCode)]||STORE_MASTER?.[storeCode]||STORE_MASTER?.[parseInt(storeCode)]||{};
+  const storeName=d.store_name&&d.store_name!==storeCode?d.store_name:storeLookup.name||storeCode;
+  const storeCity=storeLookup.city||d.store_city||'';
+  const fromCode=d.from_code||d.wh_code||'';
+
+  // SLA
+  const ov=overdueInfo(d.lr_date,d.wh_code||d.from_code,d.to_code);
+  const slaDays=ov?ov.transit:'';
+  const expDate=ov?ov.expected.toLocaleDateString('en-IN'):'';
+
+  // Delivery date
+  let deliveryDateObj=null;
+  if(d.photo_uploaded_at?.toDate){deliveryDateObj=d.photo_uploaded_at.toDate();}
+  if(d.confirmed_time?.toDate){const ct=d.confirmed_time.toDate();if(!deliveryDateObj||ct<deliveryDateObj)deliveryDateObj=ct;}
+  if(d.received_date&&!deliveryDateObj){const rd=new Date(d.received_date);if(!isNaN(rd))deliveryDateObj=rd;}
+  const deliveredDate=deliveryDateObj?deliveryDateObj.toLocaleDateString('en-IN'):'';
+
+  // Days taken
+  let daysTaken='';
+  if(deliveryDateObj&&d.lr_date){
+    const lrd=new Date(d.lr_date);
+    if(!isNaN(lrd))daysTaken=Math.ceil((deliveryDateObj-lrd)/86400000);
+  }
+
+  // Remark
+  let remark='';
+  const isDelivered=d.status==='Delivered'||d.status==='Store Confirmed';
+  if(isDelivered&&deliveryDateObj&&ov){
+    const diff=Math.ceil((deliveryDateObj-ov.expected)/86400000);
+    if(diff<0)remark='BEFORE TIME ('+Math.abs(diff)+'d early)';
+    else if(diff===0)remark='ON TIME';
+    else remark='SLA BREACH ('+diff+'d late)';
+  } else if(!isDelivered&&ov){
+    if(ov.diffDays>0)remark='SLA BREACH ('+ov.diffDays+'d overdue)';
+    else if(ov.diffDays===0)remark='DUE TODAY';
+    else remark='ON TIME';
+  }
+  const overdueDays=(!isDelivered&&ov&&ov.diffDays>0)?ov.diffDays:'';
+
+  if(!invs||invs.length===0){
+    return[buildOneRow(lr,d,{},fromCode,storeCode,storeName,storeCity,slaDays,expDate,deliveredDate,daysTaken,remark,overdueDays)];
+  }
+  return invs.map(inv=>buildOneRow(lr,d,inv,fromCode,storeCode,storeName,storeCity,slaDays,expDate,deliveredDate,daysTaken,remark,overdueDays));
+}
+
+function buildOneRow(lr,d,inv,fromCode,storeCode,storeName,storeCity,slaDays,expDate,deliveredDate,daysTaken,remark,overdueDays){
+  return{
+    'FROM_CODE':           fromCode,
+    'TO_CODE':             storeCode,
+    'STORE NAME':          storeName,
+    'STORE CITY':          storeCity,
+    'INVOICE NO':          inv.invoice_no||'',
+    'ORDER NO.':           inv.order_no||'',
+    'INV DATE':            inv.inv_date||'',
+    'TRANSPORTER NAME':    d.transporter||'',
+    'LR -NO':              lr,
+    'LR DATE':             d.lr_date||'',
+    'VEHICLE NO':          d.vehicle_no||'',
+    'INVOICE QTY':         inv.invoice_qty||'',
+    'INV VALUE':           inv.invoice_value||'',
+    'NO OF BOX':           inv.box_count||'',
+    'STATUS':              d.status||'',
+    'DELIVERY SLA (DAYS)': slaDays,
+    'EXPECTED DELIVERY':   expDate,
+    'DELIVERED DATE':      deliveredDate,
+    'DAYS TAKEN':          daysTaken,
+    'OVERDUE DAYS':        overdueDays,
+    'REMARK':              remark,
+    'DAV RECEIPT CODE':    d.delivery_receipt||'',
+    'PHOTO LINK':          d.photo_url||'',
+    'WH CODE':             d.wh_code||fromCode||'',
+    'CREATED BY':          d.created_by||'',
+    'UPDATED BY':          d.updated_by||''
+  };
 }
 
 // ══ FILE PARSE ══
